@@ -12,6 +12,7 @@ import { useLoading } from '../../../components/LoadingProvider';
 import { BRAND } from '../../../config/brand';
 import SearchableSelect from '../../../components/ui/SearchableSelect';
 import CountrySelect from '../../../components/ui/CountrySelect';
+import PhoneCodeSelect from '../../../components/ui/PhoneCodeSelect';
 
 const STEPS = [
   { id: 1, title: 'Personal', icon: 'user' },
@@ -329,13 +330,9 @@ const inputClass = "peer w-full px-4 py-4 bg-white/5 border border-white/10 roun
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                       
-                      <SearchableSelect
+                      <PhoneCodeSelect
                         value={formData.phoneCountryCode}
                         onChange={(val) => handleSelectChange('phoneCountryCode', val)}
-                        options={[
-                          { value: '+1', label: '+1 US' },
-                          { value: '+44', label: '+44 UK' },
-                        ]}
                         disabled={isLoading}
                         className="col-span-1"
                       />

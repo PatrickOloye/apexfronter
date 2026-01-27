@@ -29,11 +29,11 @@ export default function CountrySelect({
         if (!mounted) return;
 
         const formatted = data
-          .filter((c: any) => c.cca2 !== 'NG' && c.name.common !== 'Nigeria') // Explicitly remove Nigeria
           .map((c: any) => ({
-            value: c.cca2,
+            value: c.cca2, // This user wants the country code value, normally CCA2 implies ISO code (e.g. US, GB)
             label: c.name.common,
-            image: c.flags?.svg || c.flags?.png
+            image: c.flags?.svg || c.flags?.png,
+            id: c.cca2
           }))
           .sort((a: any, b: any) => a.label.localeCompare(b.label));
 

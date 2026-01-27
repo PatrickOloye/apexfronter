@@ -7,6 +7,7 @@ export interface SelectOption {
   value: string;
   label: string;
   image?: string;
+  id?: string;
 }
 
 interface SearchableSelectProps {
@@ -100,7 +101,7 @@ export default function SearchableSelect({
               ) : (
                 filteredOptions.map((option) => (
                   <Combobox.Option
-                    key={option.value}
+                    key={option.id || option.value}
                     className={({ active }) =>
                       `relative cursor-default select-none py-2 pl-10 pr-4 ${
                         active ? 'bg-blue-600/20 text-blue-400' : 'text-slate-300'

@@ -18,9 +18,19 @@ function ClientSessionManager() {
 
   // Validate session on mount (handles DB resets/server restarts)
   useEffect(() => {
-    fetchCurrentUser().catch(() => {
-      // Error handling is done inside the store (clears user if 401/404)
-    });
+    // Only attempt to validate session if we have a persisted token or an auth cookie.
+    // This avoids making an unauthenticated call too early (before zustand persist hydration)
+    try {
+      const hasLocal = typeof window !== 'undefined' && !!localStorage.getItem('apex-auth');
+      const hasCookie = typeof window !== 'undefined' && document.cookie.split('; ').some(c => c.startsWith('apex_token='));
+      if (hasLocal || hasCookie) {
+        fetchCurrentUser().catch(() => {
+          // Error handling is done inside the store (clears user if 401/404)
+        });
+      }
+    } catch (e) {
+      // If accessing storage fails for any reason, skip validation to avoid accidental logout
+    }
   }, [fetchCurrentUser]);
 
   const handleServerVersionChange = (newVersion: string, currentVersion: string | null) => {

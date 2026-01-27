@@ -70,27 +70,34 @@ export const useAuthStore = create<AuthStore>()(
         },
 
         logout: async () => {
+          // Set a transient logging-out flag
           set({ isLoggingOut: true });
+
+          // Immediately clear client state and persisted storage for snappy UX
+          set({
+            user: null,
+            token: null,
+            error: null,
+            isLoggingOut: false,
+            isLoading: false,
+          });
+
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.removeItem('apex-auth');
+            } catch (e) {
+              // ignore
+            }
+          }
+
+          // Fire-and-forget server logout to invalidate refresh token(s).
+          // Do not await so the UI can redirect immediately.
           try {
             AuthService.logout().catch((err) => {
-              console.error('Logout API error:', err);
+              console.error('Logout API error (background):', err);
             });
           } catch (err) {
-            // Log error but don't prevent logout
-            console.error('Logout API error:', err);
-          } finally {
-            // Always clear local state and localStorage
-            set({
-              user: null,
-              token: null,
-              error: null,
-              isLoggingOut: false,
-              isLoading: false
-            });
-            // Clear the persisted storage
-            if (typeof window !== 'undefined') {
-              localStorage.removeItem('apex-auth');
-            }
+            console.error('Logout API call failed (background):', err);
           }
         },
 

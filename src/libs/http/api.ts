@@ -56,7 +56,7 @@ api.interceptors.response.use(
           // Only auto-logout on 401 (invalid/expired token) or 404 on /auth/me (user deleted)
           // Do NOT logout on 403 (Forbidden) - that's a permission issue, not an auth issue.
           if (status === 401 || (status === 404 && url?.includes('/auth/me'))) {
-            console.warn('Redirecting to signin due to session expiry.');
+            console.warn('Redirecting to signin due to session expiry. Status:', status, 'URL:', url);
             localStorage.removeItem('apex-auth');
             window.location.href = '/signin?session_expired=true';
           }

@@ -153,27 +153,27 @@ const Navbar: React.FC = () => {
     return 'left-1/2 -translate-x-1/2';
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     startLoading('Signing out...');
-    
+
     // Close UI elements immediately
     setMobileMenuOpen(false);
     setActiveDropdown(null);
     setActiveNestedDropdown(null);
     setUserMenuOpen(false);
-    
-    // Fire-and-forget the logout API call, but wait for local cleanup
-    // We catch errors to ensure we proceed with client-side signout
+
+    // Trigger client-side signout immediately, call API in background
     try {
-      await logout();
-    } catch (error) {
-      console.error('Logout failed:', error);
-    } finally {
-      requestAnimationFrame(() => {
-        stopLoading();
-        router.replace('/');
-      });
+      logout().catch((err) => console.error('Logout API error (background):', err));
+    } catch (err) {
+      console.error('Logout invocation failed:', err);
     }
+
+    // Finish UI transition and navigate away immediately
+    requestAnimationFrame(() => {
+      stopLoading();
+      router.replace('/');
+    });
   };
 
   const toggleUserMenu = () => {

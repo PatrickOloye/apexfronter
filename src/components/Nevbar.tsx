@@ -175,22 +175,24 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     startLoading('Signing out...')
     setIsDropdownOpen(false)
-    
-    // Attempt graceful logout with timeout
+
+    // Trigger immediate client-side signout; call API in background
     try {
-        const logoutPromise = logout();
-        const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
-        await Promise.race([logoutPromise, timeoutPromise]);
-    } catch (error) {
-        console.error('Logout failed:', error);
+      logout().catch((err) => console.error('Logout API error (background):', err));
+    } catch (err) {
+      console.error('Logout invocation failed:', err);
     }
-    
-    // Force cleanup and hard redirect
-    localStorage.removeItem('apex-auth');
-    localStorage.removeItem('apex-storage'); // Just in case
+
+    // Force cleanup and hard redirect immediately
+    try {
+      localStorage.removeItem('apex-auth');
+      localStorage.removeItem('apex-storage'); // Just in case
+    } catch (e) {
+      // ignore
+    }
     window.location.href = '/';
   }
 
