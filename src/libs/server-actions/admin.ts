@@ -128,8 +128,10 @@ export const AdminService = {
         return data?.data ?? data;
     },
 
-    async searchUserForTransaction(identifier: string): Promise<User | null> {
-        const { data } = await api.get(`/transactions/admin/user-search?identifier=${identifier}`);
+    async searchUserForTransaction(identifier: string, options?: { signal?: AbortSignal }): Promise<User | null> {
+        const { data } = await api.get(`/transactions/admin/user-search?identifier=${encodeURIComponent(identifier)}`, {
+            signal: options?.signal,
+        });
         return data?.data ?? data;
     },
 

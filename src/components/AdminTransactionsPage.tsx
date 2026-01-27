@@ -64,6 +64,7 @@ const AdminTransactionsPage = ({ title, subtitle }: AdminTransactionsPageProps) 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [searchingUser, setSearchingUser] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const searchAbort = useRef<AbortController | null>(null);
 
   const fetchTransactions = async () => {
     setLoading(true);
@@ -97,23 +98,48 @@ const AdminTransactionsPage = ({ title, subtitle }: AdminTransactionsPageProps) 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    
+    // clear previously selected user when query changes
+    setSelectedUser(null);
+
+    // do not search for very short queries
     if (query.length < 3) {
       setSearchResults([]);
       return;
     }
 
+    // debounce user input
     searchTimeout.current = setTimeout(async () => {
+      // cancel previous request
+      if (searchAbort.current) {
+        try { searchAbort.current.abort(); } catch {} 
+        searchAbort.current = null;
+      }
+
+      const controller = new AbortController();
+      searchAbort.current = controller;
+
       setSearchingUser(true);
       try {
-        const user = await AdminService.searchUserForTransaction(query);
-        if (user) {
-             setSearchResults([user]); 
-        } else {
-            setSearchResults([]);
+        // If the user typed an email-like string, search immediately (no further throttle)
+        const isEmail = /@/.test(query);
+        if (isEmail) {
+          // no-op, still calls the same API but we skip extra logic
         }
-      } catch (error) {
-         setSearchResults([]);
+
+        const user = await AdminService.searchUserForTransaction(query, { signal: controller.signal });
+        if (user) {
+          setSearchResults([user]);
+        } else {
+          setSearchResults([]);
+        }
+      } catch (err: any) {
+        if (err?.name === 'CanceledError' || err?.name === 'AbortError') {
+          // request was canceled, ignore
+        } else {
+          // on other errors, return empty results but do not crash
+          console.error('User search error:', err);
+          setSearchResults([]);
+        }
       } finally {
         setSearchingUser(false);
       }
