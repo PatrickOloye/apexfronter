@@ -40,6 +40,16 @@ interface FormData {
 export default function SignUp() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+  const user = useAuthStore((state) => state.user);
+
+  // Redirect away from signup page if already authenticated
+  useEffect(() => {
+    if (user) {
+      const role = user?.role ?? useAuthStore.getState().user?.role;
+      const redirectPath = getRoleBasedRedirect(role);
+      router.replace(redirectPath);
+    }
+  }, [user, router]);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');

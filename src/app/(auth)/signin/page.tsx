@@ -15,6 +15,14 @@ export default function SignIn() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
   const user = useAuthStore((state) => state.user);
+  // Redirect away from signin page if already authenticated
+  useEffect(() => {
+    if (user) {
+      const role = user?.role ?? useAuthStore.getState().user?.role;
+      const redirectPath = getRoleBasedRedirect(role);
+      router.replace(redirectPath);
+    }
+  }, [user, router]);
   // Removed errorMessage state
   const isLoading = useAuthStore((state) => state.isLoading);
   const { startLoading } = useLoading();
