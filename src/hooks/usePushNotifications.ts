@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { BACKEND_URL } from '../libs/server-actions/constants';
 
 const NEXT_PUBLIC_VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
@@ -60,7 +61,8 @@ export function usePushNotifications() {
 
             // Send to backend
             // Assuming headers handle Auth token automatically via interceptors or cookie
-            await axios.post('http://localhost:3000/notifications/subscribe', subscription); // Adjust API URL
+            const base = (BACKEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+            await axios.post(`${base}/notifications/subscribe`, subscription);
 
             setIsSubscribed(true);
             alert('Successfully subscribed to notifications!');
@@ -80,7 +82,8 @@ export function usePushNotifications() {
             if (subscription) {
                 await subscription.unsubscribe();
                 // Optional: Notify backend
-                await axios.post('http://localhost:3000/notifications/unsubscribe', { endpoint: subscription.endpoint });
+                const base2 = (BACKEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+                await axios.post(`${base2}/notifications/unsubscribe`, { endpoint: subscription.endpoint });
             }
             setIsSubscribed(false);
         } catch (error) {
