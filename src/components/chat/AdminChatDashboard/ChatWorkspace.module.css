@@ -1,0 +1,62 @@
+.workspace {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #f8fafc;
+}
+
+.messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.loadingMore {
+    text-align: center;
+    padding: 12px;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.inputArea {
+    border-top: 1px solid #e2e8f0;
+    background: white;
+}
+
+.closedNotice,
+.lockNotice {
+    padding: 20px;
+    text-align: center;
+    color: #64748b;
+    font-size: 14px;
+    background: #f1f5f9;
+}
+
+.closedNotice {
+    color: #ef4444;
+    background: #fef2f2;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .workspace {
+        background: #0f172a;
+    }
+
+    .inputArea {
+        border-top-color: #334155;
+        background: #1e293b;
+    }
+
+    .closedNotice {
+        background: #7f1d1d;
+        color: #fca5a5;
+    }
+
+    .lockNotice {
+        background: #1e293b;
+        color: #94a3b8;
+    }
+}
