@@ -10,6 +10,9 @@ export function middleware(request: NextRequest) {
     // Based on auth.service.ts, it sets 'apex_token' and 'refresh_token'.
     const token = request.cookies.get('apex_token')?.value || request.cookies.get('refresh_token')?.value;
 
+    // Also check for our client-side indicator
+    const isAuthenticated = !!token || request.cookies.get('is_authenticated')?.value === 'true';
+
     // Define routes that should be inaccessible when logged in
     const authRoutes = ['/signin', '/signup', '/forgot-password'];
 
@@ -24,7 +27,7 @@ export function middleware(request: NextRequest) {
     const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
     // CASE 1: User is logged in and tries to access auth pages (signin, signup)
-    if (isAuthRoute && token) {
+    if (isAuthRoute && isAuthenticated) {
         // Redirect to a default dashboard. 
         // Ideally, we'd check the role from the token, but we can't easily decode it here without libraries.
         // For now, redirecting to /dashboard is a safe bet, and the client-side AuthGuard can reroute if needed.
@@ -34,7 +37,7 @@ export function middleware(request: NextRequest) {
     }
 
     // CASE 2: User is NOT logged in and tries to access protected pages
-    if (isProtectedRoute && !token) {
+    if (isProtectedRoute && !isAuthenticated) {
         const signInUrl = new URL('/signin', request.url);
         // Optionally append the return URL
         signInUrl.searchParams.set('callbackUrl', pathname);

@@ -51,6 +51,12 @@ export const useAuthStore = create<AuthStore>()(
           set({ isLoading: true, error: null });
           try {
             const response = await AuthService.login(email, password);
+
+            // Set client-side cookie for middleware
+            if (typeof document !== 'undefined') {
+              document.cookie = `is_authenticated=true; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+            }
+
             set({
               user: response?.user ?? null,
               token: response?.accessToken ?? null,
@@ -72,6 +78,11 @@ export const useAuthStore = create<AuthStore>()(
         logout: async () => {
           // Set a transient logging-out flag
           set({ isLoggingOut: true });
+
+          // Clear client-side cookie
+          if (typeof document !== 'undefined') {
+            document.cookie = 'is_authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          }
 
           // Immediately clear client state and persisted storage for snappy UX
           set({
@@ -105,6 +116,12 @@ export const useAuthStore = create<AuthStore>()(
           set({ isLoading: true });
           try {
             const user = await AuthService.getCurrentUser();
+
+            // Ensure cookie is synced if we successfully fetched user
+            if (typeof document !== 'undefined') {
+              document.cookie = `is_authenticated=true; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+            }
+
             set({ user, error: null });
           } catch (err: any) {
             // Clear auth state on 401/403 OR 404 (User not found)
@@ -113,6 +130,11 @@ export const useAuthStore = create<AuthStore>()(
               err?.status === 401 ||
               err?.status === 404
             ) {
+
+              if (typeof document !== 'undefined') {
+                document.cookie = 'is_authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+              }
+
               set({
                 user: null,
                 token: null,
