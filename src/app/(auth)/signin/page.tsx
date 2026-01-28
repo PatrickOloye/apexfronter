@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -48,7 +48,7 @@ export default function SignIn() {
       
       toast.success('Successfully signed in!');
       startLoading('Redirecting...');
-      router.push(redirectPath);
+      router.replace(redirectPath);
     } catch (error) {
       console.error('Signin error:', error);
       const msg = error instanceof Error ? error.message : 'An error occurred during sign in';

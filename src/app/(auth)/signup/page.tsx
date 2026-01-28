@@ -160,7 +160,7 @@ export default function SignUp() {
       const role = response?.user?.role ?? useAuthStore.getState().user?.role;
       const redirectPath = getRoleBasedRedirect(role);
       startLoading('Redirecting...');
-      setTimeout(() => router.push(redirectPath), 300);
+      setTimeout(() => router.replace(redirectPath), 300);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'An error occurred');
     } finally {
