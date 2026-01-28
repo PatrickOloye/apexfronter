@@ -44,7 +44,15 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(signInUrl);
     }
 
-    return NextResponse.next();
+    // Add no-store headers for auth routes to prevent BF Cache
+    const response = NextResponse.next();
+    if (isAuthRoute) {
+        response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate, proxy-revalidate');
+        response.headers.set('Pragma', 'no-cache');
+        response.headers.set('Expires', '0');
+    }
+
+    return response;
 }
 
 // Config to limit the middleware scope for performance

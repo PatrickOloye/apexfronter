@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore, getRoleBasedRedirect } from '../../../store/AuthStore';
+import { useAuthRedirect } from '../../../hooks/useAuthRedirect';
 import { api } from '../../../libs/http/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -42,14 +43,8 @@ export default function SignUp() {
   const login = useAuthStore((state) => state.login);
   const user = useAuthStore((state) => state.user);
 
-  // Redirect away from signup page if already authenticated
-  useEffect(() => {
-    if (user) {
-      const role = user?.role ?? useAuthStore.getState().user?.role;
-      const redirectPath = getRoleBasedRedirect(role);
-      router.replace(redirectPath);
-    }
-  }, [user, router]);
+  // Use persistent redirect hook to handle Back button / fast navigation
+  useAuthRedirect();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');

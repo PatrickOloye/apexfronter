@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { SigninFormData } from '@/libs/server-actions/types';
 import { useAuthStore, getRoleBasedRedirect } from '../../../store/AuthStore';
+import { useAuthRedirect } from '../../../hooks/useAuthRedirect';
 import { motion } from 'framer-motion';
 import { useLoading } from '../../../components/LoadingProvider';
 import { BRAND } from '../../../config/brand';
@@ -15,14 +16,9 @@ export default function SignIn() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
   const user = useAuthStore((state) => state.user);
-  // Redirect away from signin page if already authenticated
-  useEffect(() => {
-    if (user) {
-      const role = user?.role ?? useAuthStore.getState().user?.role;
-      const redirectPath = getRoleBasedRedirect(role);
-      router.replace(redirectPath);
-    }
-  }, [user, router]);
+  
+  // Use persistent redirect hook to handle Back button / fast navigation
+  useAuthRedirect();
   // Removed errorMessage state
   const isLoading = useAuthStore((state) => state.isLoading);
   const { startLoading } = useLoading();
