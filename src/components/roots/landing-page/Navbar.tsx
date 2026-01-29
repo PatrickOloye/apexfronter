@@ -10,6 +10,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore, getRoleBasePath } from '../../../store/AuthStore';
 import AppLink from '../../AppLink';
 import { useLoading } from '../../LoadingProvider';
+import { useHasHydrated } from '../../HydrationGate';
 
 interface DropdownItem {
   name: string;
@@ -39,6 +40,9 @@ const Navbar: React.FC = () => {
   const [activeNestedDropdown, setActiveNestedDropdown] = useState<{ section: string, item: string } | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  // Track Zustand hydration to prevent UI flash
+  const hasHydrated = useHasHydrated();
   
   const searchRef = useRef<HTMLDivElement>(null);
   const navbarRef = useRef<HTMLDivElement>(null);
@@ -414,8 +418,8 @@ const Navbar: React.FC = () => {
 
             {/* Auth Buttons (Desktop) */}
             <div className="hidden md:flex items-center space-x-2">
-              {isLoading ? (
-                // Loading state indicator
+              {(isLoading || !hasHydrated) ? (
+                // Loading state indicator (shown while fetching user OR during Zustand rehydration)
                 <div className={`rounded-full h-6 w-6 border-2 border-t-transparent animate-spin ${
                   isScrolled ? 'border-gray-300' : 'border-white'
                 }`}></div>
@@ -495,7 +499,7 @@ const Navbar: React.FC = () => {
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center gap-2">
               {/* Mobile Profile Avatar (when logged in) */}
-              {!isLoading && isLoggedIn && (
+              {!isLoading && hasHydrated && isLoggedIn && (
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={toggleUserMenu}

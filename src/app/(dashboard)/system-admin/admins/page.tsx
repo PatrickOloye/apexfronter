@@ -181,7 +181,7 @@ export default function AdminManagement() {
       </div>
 
       {/* System Admin Limit Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 text-white shadow-xl shadow-indigo-200">
            <div className="flex items-start justify-between">
               <div>
@@ -226,110 +226,209 @@ export default function AdminManagement() {
              <p className="text-slate-500 font-medium animate-pulse">Loading admins...</p>
            </div>
         ) : (
-            <table className="w-full">
-            <thead className="bg-slate-50/80 border-b border-slate-100">
-                <tr>
-                <th className="text-left px-6 py-4 font-semibold text-slate-500 text-xs uppercase tracking-wider">Admin Profile</th>
-                <th className="text-left px-6 py-4 font-semibold text-slate-500 text-xs uppercase tracking-wider">Role</th>
-                <th className="text-left px-6 py-4 font-semibold text-slate-500 text-xs uppercase tracking-wider">Permissions</th>
-                <th className="text-left px-6 py-4 font-semibold text-slate-500 text-xs uppercase tracking-wider">Status</th>
-                <th className="text-right px-6 py-4 font-semibold text-slate-500 text-xs uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-                {admins.map((admin, index) => (
-                <motion.tr 
-                    key={admin.id} 
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="group hover:bg-slate-50/50 transition-colors"
-                >
-                    <td className="px-6 py-4">
-                    <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50/80 border-b border-slate-100">
+                  <tr>
+                    <th className="text-left px-6 py-4 font-semibold text-slate-500 text-xs uppercase tracking-wider">Admin Profile</th>
+                    <th className="text-left px-6 py-4 font-semibold text-slate-500 text-xs uppercase tracking-wider">Role</th>
+                    <th className="text-left px-6 py-4 font-semibold text-slate-500 text-xs uppercase tracking-wider">Permissions</th>
+                    <th className="text-left px-6 py-4 font-semibold text-slate-500 text-xs uppercase tracking-wider">Status</th>
+                    <th className="text-right px-6 py-4 font-semibold text-slate-500 text-xs uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {admins.map((admin, index) => (
+                    <motion.tr 
+                      key={admin.id} 
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="group hover:bg-slate-50/50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${
                             admin.role === 'SYSTEM_ADMIN' 
                              ? 'bg-gradient-to-br from-amber-300 to-yellow-500 text-white shadow-amber-200'
                              : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-indigo-200'
+                          }`}>
+                            {admin.role === 'SYSTEM_ADMIN' ? <Crown className="w-5 h-5" /> : (admin.firstName?.[0] || admin.email[0].toUpperCase())}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900">{admin.firstName} {admin.lastName}</p>
+                            <p className="text-sm text-slate-500">{admin.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                          admin.role === 'SYSTEM_ADMIN' 
+                          ? 'bg-amber-50 text-amber-700 border-amber-100' 
+                          : 'bg-blue-50 text-blue-700 border-blue-100'
                         }`}>
+                          {admin.role === 'SYSTEM_ADMIN' ? 'System Admin' : 'Admin'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 max-w-xs">
+                        {admin.role === 'SYSTEM_ADMIN' ? (
+                          <span className="text-xs text-slate-400 italic flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" /> All Permissions Granted
+                          </span>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {admin.permissions.slice(0, 2).map((p) => (
+                              <span key={p.id} className="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] text-slate-600 font-medium">
+                                {p.name}
+                              </span>
+                            ))}
+                            {admin.permissions.length > 2 && (
+                              <span className="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] text-slate-500">
+                                +{admin.permissions.length - 2}
+                              </span>
+                            )}
+                            {admin.permissions.length === 0 && (
+                              <span className="text-xs text-slate-400">No specific permissions</span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
+                          admin.isActive 
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                          : 'bg-rose-50 text-rose-700 border-rose-100'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${admin.isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          {admin.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {admin.role !== 'SYSTEM_ADMIN' && (
+                            <button
+                              onClick={() => openPermissionModal(admin)}
+                              className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                              title="Edit Permissions"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleToggleActive(admin)}
+                            className={`p-2 rounded-lg transition-all ${
+                              admin.isActive
+                              ? 'text-slate-500 hover:text-rose-600 hover:bg-rose-50'
+                              : 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'
+                            }`}
+                            title={admin.isActive ? "Deactivate" : "Reactivate"}
+                          >
+                            {admin.isActive ? <Power className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden flex flex-col divide-y divide-slate-100">
+              {admins.map((admin, index) => (
+                <motion.div 
+                  key={admin.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="p-4 space-y-4"
+                >
+                  {/* Header: User Info & Status */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0 ${
+                        admin.role === 'SYSTEM_ADMIN' 
+                         ? 'bg-gradient-to-br from-amber-300 to-yellow-500 text-white shadow-amber-200'
+                         : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-indigo-200'
+                      }`}>
                         {admin.role === 'SYSTEM_ADMIN' ? <Crown className="w-5 h-5" /> : (admin.firstName?.[0] || admin.email[0].toUpperCase())}
-                        </div>
-                        <div>
-                        <p className="font-semibold text-slate-900">{admin.firstName} {admin.lastName}</p>
-                        <p className="text-sm text-slate-500">{admin.email}</p>
-                        </div>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 truncate">{admin.firstName} {admin.lastName}</p>
+                        <p className="text-xs text-slate-500 truncate">{admin.email}</p>
+                      </div>
                     </div>
-                    </td>
-                    <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                    {/* Actions Dropdown or Row */}
+                    <div className="flex items-center gap-1">
+                      {admin.role !== 'SYSTEM_ADMIN' && (
+                        <button
+                          onClick={() => openPermissionModal(admin)}
+                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                        >
+                          <Settings className="w-5 h-5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleToggleActive(admin)}
+                        className={`p-2 rounded-lg ${
+                          admin.isActive
+                          ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                          : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                        }`}
+                      >
+                        {admin.isActive ? <Power className="w-5 h-5" /> : <RefreshCw className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Body: Role & Permissions */}
+                  <div className="space-y-3 pl-[3.25rem]">
+                    <div className="flex flex-wrap gap-2">
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${
                         admin.role === 'SYSTEM_ADMIN' 
                         ? 'bg-amber-50 text-amber-700 border-amber-100' 
                         : 'bg-blue-50 text-blue-700 border-blue-100'
-                    }`}>
+                      }`}>
                         {admin.role === 'SYSTEM_ADMIN' ? 'System Admin' : 'Admin'}
-                    </span>
-                    </td>
-                    <td className="px-6 py-4 max-w-xs">
-                    {admin.role === 'SYSTEM_ADMIN' ? (
-                        <span className="text-xs text-slate-400 italic flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" /> All Permissions Granted
-                        </span>
-                    ) : (
-                        <div className="flex flex-wrap gap-1.5">
-                        {admin.permissions.slice(0, 2).map((p) => (
-                            <span key={p.id} className="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] text-slate-600 font-medium">
-                            {p.name}
-                            </span>
-                        ))}
-                        {admin.permissions.length > 2 && (
-                            <span className="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] text-slate-500">
-                            +{admin.permissions.length - 2}
-                            </span>
-                        )}
-                        {admin.permissions.length === 0 && (
-                            <span className="text-xs text-slate-400">No specific permissions</span>
-                        )}
-                        </div>
-                    )}
-                    </td>
-                    <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
+                      </span>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${
                         admin.isActive 
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
                         : 'bg-rose-50 text-rose-700 border-rose-100'
-                    }`}>
+                      }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${admin.isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                         {admin.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                    </td>
-                    <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {admin.role !== 'SYSTEM_ADMIN' && (
-                            <button
-                                onClick={() => openPermissionModal(admin)}
-                                className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                title="Edit Permissions"
-                            >
-                                <Settings className="w-4 h-4" />
-                            </button>
-                            )}
-                            <button
-                                onClick={() => handleToggleActive(admin)}
-                                className={`p-2 rounded-lg transition-all ${
-                                    admin.isActive
-                                    ? 'text-slate-500 hover:text-rose-600 hover:bg-rose-50'
-                                    : 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'
-                                }`}
-                                title={admin.isActive ? "Deactivate" : "Reactivate"}
-                            >
-                                {admin.isActive ? <Power className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}
-                            </button>
+                      </span>
+                    </div>
+
+                    {/* Permissions */}
+                    <div className="bg-slate-50 rounded-lg p-3 border border-slate-100/50">
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-2">Permissions</p>
+                      {admin.role === 'SYSTEM_ADMIN' ? (
+                        <span className="text-xs text-slate-500 italic flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" /> All Permissions Granted
+                        </span>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {admin.permissions.length > 0 ? (
+                            admin.permissions.map((p) => (
+                              <span key={p.id} className="px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-600 font-medium shadow-sm">
+                                {p.name}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-slate-400">No specific permissions</span>
+                          )}
                         </div>
-                    </td>
-                </motion.tr>
-                ))}
-            </tbody>
-            </table>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

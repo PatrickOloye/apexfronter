@@ -16,23 +16,19 @@ export const api = axios.create({
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (typeof window !== 'undefined') {
-    const raw = localStorage.getItem('apex-auth');
-    if (raw) {
-      try {
+    try {
+      const raw = localStorage.getItem('apex-auth');
+      if (raw) {
         const parsed = JSON.parse(raw);
         const token = parsed?.state?.token as string | undefined;
         if (token) {
-          config.headers = config.headers ?? {
-            deleteSession: async (chatId: string) => {
-              const response = await api.delete(`/chat/sessions/${chatId}`);
-              return response.data;
-            },
-          };
+          config.headers = config.headers ?? {};
           config.headers.Authorization = `Bearer ${token}`;
         }
-      } catch {
-        // ignore invalid storage
       }
+    } catch (e) {
+      // Storage access failed - may be private browsing, quota exceeded, or iOS Safari issue
+      console.warn('[API] Failed to read auth from storage:', e);
     }
   }
   return config;

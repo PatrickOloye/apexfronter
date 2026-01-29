@@ -53,28 +53,42 @@ const StatCard = ({ title, value, icon, color, link }: {
 };
 
 // Quick Action Button
-const QuickAction = ({ title, icon, onClick, disabled = false, variant = 'primary' }: {
+const QuickAction = ({ title, icon, onClick, href, disabled = false, variant = 'primary' }: {
   title: string;
   icon: string;
-  onClick: () => void;
+  onClick?: () => void;
+  href?: string;
   disabled?: boolean;
   variant?: 'primary' | 'secondary';
-}) => (
-  <motion.button
-    whileHover={{ scale: disabled ? 1 : 1.02 }}
-    whileTap={{ scale: disabled ? 1 : 0.98 }}
-    onClick={onClick}
-    disabled={disabled}
-    className={`flex items-center gap-3 p-4 rounded-xl transition-all ${
-      variant === 'primary' 
-        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25' 
-        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-    } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-  >
-    <span className="text-2xl">{icon}</span>
-    <span className="font-medium">{title}</span>
-  </motion.button>
-);
+}) => {
+  const className = `flex items-center gap-3 p-4 rounded-xl transition-all ${
+    variant === 'primary' 
+      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25' 
+      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+  } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`;
+
+  if (href && !disabled) {
+    return (
+      <Link href={href} className={className}>
+        <span className="text-2xl">{icon}</span>
+        <span className="font-medium">{title}</span>
+      </Link>
+    );
+  }
+
+  return (
+    <motion.button
+      whileHover={{ scale: disabled ? 1 : 1.02 }}
+      whileTap={{ scale: disabled ? 1 : 0.98 }}
+      onClick={onClick}
+      disabled={disabled}
+      className={className}
+    >
+      <span className="text-2xl">{icon}</span>
+      <span className="font-medium">{title}</span>
+    </motion.button>
+  );
+};
 
 // Activity Item
 const ActivityItem = ({ log }: { log: AuditLog }) => {
@@ -209,26 +223,30 @@ export default function SystemAdminDashboard() {
             <QuickAction 
               title="Create Admin" 
               icon="➕" 
-              onClick={() => window.location.href = '/system-admin/admins?action=create'}
+              href="/system-admin/admins?action=create"
               disabled={!stats?.systemAdminCount?.canCreateMore}
             />
             <QuickAction 
               title="View Audit Logs" 
               icon="📋" 
-              onClick={() => window.location.href = '/system-admin/audit'}
+              href="/system-admin/audit"
               variant="secondary"
             />
             <QuickAction 
               title="System Settings" 
               icon="⚙️" 
-              onClick={() => window.location.href = '/system-admin/settings'}
+              href="/system-admin/settings"
               variant="secondary"
             />
             <QuickAction 
               title="Generate Report" 
               icon="📈" 
-              onClick={() => alert('Report generation coming soon!')}
+              onClick={() => {
+                // Future implementation
+                console.log('Report generation triggered');
+              }}
               variant="secondary"
+              disabled={true} // Disabled for now until implemented
             />
           </div>
 

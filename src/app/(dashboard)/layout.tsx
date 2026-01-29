@@ -142,7 +142,7 @@ export default function DashboardLayout({
           isScrolled={isScrolled} 
           onMenuClick={() => setIsSidebarOpen(true)}
         />
-        <div className={`flex-1 relative ${isChatPage ? 'p-0 overflow-hidden flex flex-col' : 'px-4 md:px-6 py-4'}`}>
+        <div className={`flex-1 relative ${isChatPage ? 'p-0 overflow-hidden flex flex-col' : 'px-4 md:px-6 pt-4 pb-24 md:pb-4'}`}>
           {isChatPage ? (
              <div className="h-full w-full">
                <AuthGuard>{children}</AuthGuard>

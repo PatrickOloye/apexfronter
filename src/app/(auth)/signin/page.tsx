@@ -42,9 +42,36 @@ export default function SignIn() {
       const role = response?.user?.role ?? useAuthStore.getState().user?.role;
       const redirectPath = getRoleBasedRedirect(role);
       
+      // Start loading overlay BEFORE toast so user sees smooth transition
+      startLoading('Redirecting to your dashboard...');
       toast.success('Successfully signed in!');
-      startLoading('Redirecting...');
-      router.replace(redirectPath);
+      
+      // CRITICAL: Wait for Zustand persist to write token to localStorage
+      // The persist middleware is async - we must wait before navigating
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Verify token is actually in localStorage before navigating
+      const verifyStorage = (): boolean => {
+        try {
+          const stored = localStorage.getItem('apex-auth');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            return !!parsed?.state?.token;
+          }
+        } catch (e) {
+          console.warn('[SignIn] Storage verification failed:', e);
+        }
+        return false;
+      };
+      
+      // If still not written, wait a bit more (handles slow iOS devices)
+      if (!verifyStorage()) {
+        console.warn('[SignIn] Token not in storage yet, waiting longer...');
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Use hard navigation to ensure clean slate and avoid Next.js router race
+      window.location.href = redirectPath;
     } catch (error) {
       console.error('Signin error:', error);
       const msg = error instanceof Error ? error.message : 'An error occurred during sign in';

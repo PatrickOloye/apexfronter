@@ -7,6 +7,7 @@ import { useLoading } from "./LoadingProvider"
 import { api } from "../libs/http/api"
 import { NotificationsAPI, AdminNotification } from "../libs/server-actions/notifications"
 import { useNotificationsSocket } from "@/hooks/useNotificationsSocket"
+import { useHasHydrated } from "./HydrationGate"
 
 type NotificationItem = {
   id: string;
@@ -32,6 +33,9 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
   const notificationRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const { startLoading } = useLoading()
+  
+  // Track hydration state to prevent showing wrong UI during Zustand rehydration
+  const hasHydrated = useHasHydrated()
 
   const dashboardRoute = getRoleBasePath(user?.role)
   const unreadCount = remoteUnreadCount ?? notifications.filter(n => !n.read).length
@@ -510,6 +514,16 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
                 </div>
               </div>
             )}
+          </div>
+        ) : !hasHydrated ? (
+          // Show loading skeleton while Zustand is rehydrating from localStorage
+          // This prevents the "Sign In / Open Account" flash on iOS/Safari
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-200 animate-pulse" />
+            <div className="hidden md:flex flex-col items-start gap-1">
+              <div className="w-20 h-3 rounded bg-slate-200 animate-pulse" />
+              <div className="w-12 h-3 rounded bg-slate-200 animate-pulse" />
+            </div>
           </div>
         ) : (
           <div className="flex items-center gap-3">

@@ -151,11 +151,41 @@ export default function SignUp() {
       });
 
       setSuccessMessage('Account created successfully!');
+      
+      // Auto-login after signup
       const response = await login(formData.email, formData.password);
       const role = response?.user?.role ?? useAuthStore.getState().user?.role;
       const redirectPath = getRoleBasedRedirect(role);
-      startLoading('Redirecting...');
-      setTimeout(() => router.replace(redirectPath), 300);
+      
+      // Start loading overlay
+      startLoading('Setting up your account...');
+      
+      // CRITICAL: Wait for Zustand persist to write token to localStorage
+      // The persist middleware is async - we must wait before navigating
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Verify token is actually in localStorage before navigating
+      const verifyStorage = (): boolean => {
+        try {
+          const stored = localStorage.getItem('apex-auth');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            return !!parsed?.state?.token;
+          }
+        } catch (e) {
+          console.warn('[SignUp] Storage verification failed:', e);
+        }
+        return false;
+      };
+      
+      // If still not written, wait a bit more (handles slow iOS devices)
+      if (!verifyStorage()) {
+        console.warn('[SignUp] Token not in storage yet, waiting longer...');
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Use hard navigation to ensure clean slate
+      window.location.href = redirectPath;
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'An error occurred');
     } finally {
