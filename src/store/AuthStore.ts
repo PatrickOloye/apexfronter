@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { AuthService } from '../libs/server-actions/auth';
+import { api } from '../libs/http/api';
 
 interface AuthStore {
   user: any | null;
@@ -55,6 +56,11 @@ export const useAuthStore = create<AuthStore>()(
             // Set client-side cookie for middleware
             if (typeof document !== 'undefined') {
               document.cookie = `is_authenticated=true; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+            }
+
+            // Set global axios header for immediate use (bypasses localStorage race condition)
+            if (response?.accessToken) {
+              api.defaults.headers.common['Authorization'] = `Bearer ${response.accessToken}`;
             }
 
             set({
@@ -131,21 +137,30 @@ export const useAuthStore = create<AuthStore>()(
               err?.status === 404
             ) {
 
+              // CRITICAL FIX: Do NOT wipe the session immediately on a single 401.
+              // This prevents race conditions (e.g. one failed notification request) from killing the whole app.
+              // Instead, we set the error state and let the UI handle it (e.g. show "Session Expired" badge).
+
+              /* 
               if (typeof document !== 'undefined') {
                 document.cookie = 'is_authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
               }
+              */
 
               set({
-                user: null,
-                token: null,
-                error: 'Session expired or user not found. Please login again.'
+                // user: null,  <-- ENABLE logic to keep user in store
+                // token: null, <-- ENABLE logic to keep token in store
+                error: 'Session expired. Please refresh or login again.'
               });
-              console.error('[AuthStore] fetchCurrentUser failed - clearing session. Error:', err);
+
+              console.warn('[AuthStore] fetchCurrentUser 401/404 encountered. Keeping session state for resilience. Error:', err);
+
+              /*
               // Ensure localStorage is cleared
               if (typeof window !== 'undefined') {
                 localStorage.removeItem('apex-auth');
-                // Optional: Redirect if needed, but api.ts handles the main redirect
               }
+              */
             } else {
               set({ error: err instanceof Error ? err.message : 'An unknown error occurred' });
             }
@@ -161,7 +176,18 @@ export const useAuthStore = create<AuthStore>()(
         partialize: (state) => ({
           user: state.user,
           token: state.token
-        })
+        }),
+        onRehydrateStorage: () => (state) => {
+          if (state?.token) {
+            // Immediately set the default header upon hydration.
+            // This ensures api.ts doesn't rely solely on localStorage read.
+            api.defaults.headers.common['Authorization'] = `Bearer ${state.token}`;
+            // Also sync cookie just in case
+            if (typeof document !== 'undefined') {
+              document.cookie = `is_authenticated=true; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+            }
+          }
+        }
       }
     )
   )

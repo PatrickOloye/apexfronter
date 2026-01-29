@@ -15,6 +15,12 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  // If Authorization header is already set (e.g. by AuthStore via defaults), respect it.
+  // This bypasses the need to read from slow localStorage if we have the token in memory.
+  if (config.headers?.Authorization) {
+    return config;
+  }
+
   if (typeof window !== 'undefined') {
     try {
       const raw = localStorage.getItem('apex-auth');
@@ -45,25 +51,18 @@ api.interceptors.response.use(
 
       // If we are already on an auth page, do nothing (to avoid loop)
       if (typeof window !== 'undefined') {
-        const isAuthPage = window.location.pathname === '/' || window.location.pathname.startsWith('/signin') || window.location.pathname.startsWith('/signup');
+        // const isAuthPage = window.location.pathname === '/' || window.location.pathname.startsWith('/signin') || window.location.pathname.startsWith('/signup');
+        // NOTE: We disabled auto-redirect to prevent loops. AuthStore will handle the state update.
+        console.warn(`[Auto-Logout] Auth error (${status}) detected from URL: ${url}. Suppressing auto-redirect to prevent loops.`);
 
+        /* 
         if (!isAuthPage) {
-          console.warn(`[Auto-Logout] Auth error (${status}) detected from URL: ${url}`);
-          // Only auto-logout on 401 (invalid/expired token) or 404 on /auth/me (user deleted)
-          // Do NOT logout on 403 (Forbidden) - that's a permission issue, not an auth issue.
           if (status === 401 || (status === 404 && url?.includes('/auth/me'))) {
-            console.warn('Redirecting to signin due to session expiry. Status:', status, 'URL:', url);
-            localStorage.removeItem('apex-auth');
-            window.location.href = '/signin?session_expired=true';
+             // localStorage.removeItem('apex-auth');
+             // window.location.href = '/signin?session_expired=true';
           }
-        } else {
-          // Just plain clear if we are on auth page (e.g. login failed)
-          // But don't redirect to avoid loop
-          console.warn(`[Auth-Clear] Clearing session on auth page due to ${status} from ${url}`);
-          if (status !== 401) { // If 401 on login, it's just wrong password, don't clear everything
-            localStorage.removeItem('apex-auth');
-          }
-        }
+        } 
+        */
       }
 
       // Don't auto-redirect for login endpoint itself (status 401 usually means wrong password)
