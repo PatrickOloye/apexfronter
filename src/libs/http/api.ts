@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 import { BACKEND_URL } from '@/libs/server-actions/constants';
+import { useAuthStore } from '@/store/AuthStore';
 
 const API_URL = BACKEND_URL;
 
@@ -17,8 +18,30 @@ export const api = axios.create({
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   // If Authorization header is already set (e.g. by AuthStore via defaults), respect it.
   // This bypasses the need to read from slow localStorage if we have the token in memory.
+  // Check if header present on this request
   if (config.headers?.Authorization) {
     return config;
+  }
+
+  // Check axios defaults (set by store hydration/login)
+  const defaultAuth = api.defaults.headers.common?.Authorization as string | undefined;
+  if (defaultAuth) {
+    config.headers = config.headers ?? {};
+    config.headers.Authorization = defaultAuth;
+    return config;
+  }
+
+  // Check in-memory Zustand store directly (fast) before attempting localStorage.
+  try {
+    const memToken = useAuthStore.getState().token;
+    if (memToken) {
+      config.headers = config.headers ?? {};
+      config.headers.Authorization = `Bearer ${memToken}`;
+      return config;
+    }
+  } catch (e) {
+    // defensive: if importing the store fails for some reason, continue to storage fallback
+    // (do not throw)
   }
 
   if (typeof window !== 'undefined') {

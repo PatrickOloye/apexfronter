@@ -119,9 +119,38 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
      );
   }
 
-  // If no token and no user after check, we assume redirect happened or is pending.
-  // Render null to avoid flash of protected content.
-  if (!token && !user) return null;
+  // If no token and no user after check, show a recovery UI instead of a blank page.
+  // This addresses the case where a server-side cookie (middleware) routed the browser
+  // to a protected route before the client fully hydrated (common on iOS/Safari).
+  if (!token && !user) {
+    return (
+      <div className="w-full h-screen flex flex-col items-center justify-center bg-white p-4 text-center">
+        <div className="mb-4 text-yellow-500 text-5xl">⚠️</div>
+        <h2 className="text-xl font-bold text-gray-800 mb-2">Session unavailable</h2>
+        <p className="text-gray-600 mb-6">Your session appears to be incomplete. This can happen when the app was redirected to a protected page before authentication finished loading.</p>
+        <div className="flex gap-4">
+          <button
+            onClick={() => {
+              // Force a hard reload which will clear inconsistent client state and re-run middleware checks
+              window.location.reload();
+            }}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            Reload page
+          </button>
+          <button
+            onClick={() => {
+              // Navigate back to sign in to allow explicit re-authentication
+              router.replace('/signin');
+            }}
+            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+          >
+            Go to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }
