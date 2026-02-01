@@ -94,7 +94,9 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
           }))
         )
       } catch (error) {
-        console.error('Failed to load notifications:', error)
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Failed to load notifications:', error)
+        }
         setNotifications([])
       }
     }
@@ -175,8 +177,9 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
         setIsNotificationOpen(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    // Use 'click' instead of 'mousedown' so element click handlers run first
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
   }, [])
 
   const handleLogout = () => {
@@ -185,9 +188,15 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
 
     // Trigger immediate client-side signout; call API in background
     try {
-      logout().catch((err) => console.error('Logout API error (background):', err));
+      logout().catch((err) => {
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Logout API error (background):', err);
+        }
+      });
     } catch (err) {
-      console.error('Logout invocation failed:', err);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Logout invocation failed:', err);
+      }
     }
 
     // Force cleanup and hard redirect immediately
@@ -218,7 +227,9 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
       }
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
     } catch (error) {
-      console.error('Failed to mark notification read:', error)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to mark notification read:', error)
+      }
     }
   }
 
@@ -242,7 +253,9 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
       }
       setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     } catch (error) {
-      console.error('Failed to mark all notifications read:', error)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to mark all notifications read:', error)
+      }
     }
   }
 
@@ -469,13 +482,13 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
 
                 {/* Menu Items */}
                 <div className="py-1">
-                  <AppLink href="/" onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                  <AppLink href="/" onClick={() => { console.log('[Nevbar] Home clicked from dropdown', { time: new Date().toISOString() }); setIsDropdownOpen(false); }} className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
                     <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
                     Home
                   </AppLink>
-                  <AppLink href={dashboardRoute} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                  <AppLink href={dashboardRoute} onClick={() => { console.log('[Nevbar] Dashboard clicked from dropdown', { href: dashboardRoute, time: new Date().toISOString() }); setIsDropdownOpen(false); }} className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
                     <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>

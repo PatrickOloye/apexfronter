@@ -60,3 +60,35 @@
         color: #94a3b8;
     }
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .workspace {
+        flex: 1;
+        min-height: 0;
+    }
+
+    .messages {
+        padding: 16px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .inputArea {
+        position: sticky;
+        bottom: 0;
+        padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+
+    .closedNotice,
+    .lockNotice {
+        padding: 16px;
+        font-size: 13px;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .messages {
+        scroll-behavior: smooth;
+    }
+}

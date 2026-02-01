@@ -24,10 +24,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       // We rely on background API calls to trigger 401s if the session is actually dead.
       if (user) return;
 
-      // If no token at all, strictly no auth.
-      if (!token) {
-         // handled by effect dependencies / final check
-         return; 
+      const hasCookie = typeof document !== 'undefined' && (
+        document.cookie.includes('apex_token=') || document.cookie.includes('refresh_token=')
+      );
+
+      // If no token and no auth cookies, strictly no auth.
+      if (!token && !hasCookie) {
+        return; 
       }
 
       // If token exists but no user (e.g. fresh load or lost state), verify session.
@@ -65,7 +68,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         }
       } catch (err: any) {
          if (!mounted) return;
-         console.error('Session check failed:', err);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Session check failed:', err);
+        }
          
          // If timeout or network error, show UI instead of redirecting
          if (err.message === 'Connection timeout' || err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
@@ -122,7 +127,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   // If no token and no user after check, show a recovery UI instead of a blank page.
   // This addresses the case where a server-side cookie (middleware) routed the browser
   // to a protected route before the client fully hydrated (common on iOS/Safari).
-  if (!token && !user) {
+  const hasAuthCookie = typeof document !== 'undefined' && (
+    document.cookie.includes('apex_token=') || document.cookie.includes('refresh_token=')
+  );
+
+  if (!token && !user && !hasAuthCookie) {
     return (
       <div className="w-full h-screen flex flex-col items-center justify-center bg-white p-4 text-center">
         <div className="mb-4 text-yellow-500 text-5xl">⚠️</div>

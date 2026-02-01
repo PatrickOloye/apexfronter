@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { BrandMark } from '@/components/BrandMark';
 
 const phrases = [
   "Debt Consolidation",
@@ -68,11 +69,8 @@ export default function SecuredLoanHero() {
       {/* Main hero content */}
       <div className="relative z-10 container mx-auto px-4 py-16 md:py-24">
         <div className="max-w-4xl mx-auto">
-          {/* Apex Finance Logo - redesigned as text only */}
           <div className="flex items-center justify-center md:justify-start mb-8">
-            <div className="font-extrabold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 to-purple-300">
-              APEX FINANCE
-            </div>
+            <BrandMark variant="dark" size="lg" />
           </div>
           
           {/* Main heading with reveal animation */}

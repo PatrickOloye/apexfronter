@@ -327,7 +327,7 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
 
         const interval = setInterval(() => {
             socketRef.current?.emit('admin:heartbeat');
-        }, 15000);
+        }, 600000); // 10 minutes
 
         return () => clearInterval(interval);
     }, [state.isConnected, state.chatId, user?.role]);

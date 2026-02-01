@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import styles from './ChatListPanel.module.css';
+import { Search, MessageSquare, Trash2 } from 'lucide-react';
 
 interface ChatListItem {
   id: string;
@@ -14,17 +15,22 @@ interface ChatListItem {
   unreadCount?: number;
   isLocked?: boolean;
   lockedByMe?: boolean;
+  messages?: { content: string; senderType: string }[];
+  user?: {
+    accountNumber?: string;
+  };
 }
 
 interface ChatListPanelProps {
   chats: ChatListItem[];
   selectedChatId?: string;
   onSelectChat: (chatId: string) => void;
-  filter: 'all' | 'open' | 'locked' | 'closed';
-  onFilterChange: (filter: 'all' | 'open' | 'locked' | 'closed') => void;
+  filter: 'all' | 'open' | 'locked' | 'closed' | 'unread';
+  onFilterChange: (filter: 'all' | 'open' | 'locked' | 'closed' | 'unread') => void;
   loading?: boolean;
   onDelete?: (chatId: string) => void;
   canDelete?: boolean;
+  role?: 'ADMIN' | 'SYSTEM_ADMIN';
 }
 
 export function ChatListPanel({
@@ -36,7 +42,10 @@ export function ChatListPanel({
   loading,
   onDelete,
   canDelete = false,
+  role = 'ADMIN',
 }: ChatListPanelProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+
   const formatTime = (date: string) => {
     const d = new Date(date);
     const now = new Date();
@@ -48,83 +57,163 @@ export function ChatListPanel({
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
     return `${diffDays}d ago`;
   };
 
+  const getLastMessage = (chat: ChatListItem) => {
+    if (chat.messages && chat.messages.length > 0) {
+      const lastMsg = chat.messages[chat.messages.length - 1];
+      return lastMsg.content.slice(0, 60) + (lastMsg.content.length > 60 ? '...' : '');
+    }
+    return chat.status === 'CLOSED' ? 'Chat ended' : 'No messages yet';
+  };
+
+  const getStatusBadge = (chat: ChatListItem) => {
+    if (chat.status === 'CLOSED') {
+      return <span className={styles.badgeResolved}>Resolved</span>;
+    }
+    if (chat.unreadCount && chat.unreadCount > 0) {
+      return <span className={styles.badgeNew}>NEW</span>;
+    }
+    if (chat.lockedByMe) {
+      return <span className={styles.badgeYou}>You</span>;
+    }
+    if (chat.isLocked && !chat.lockedByMe) {
+      return <span className={styles.badgeLocked}>Locked</span>;
+    }
+    return <span className={styles.badgePending}>Open</span>;
+  };
+
+  // Filter by search query
+  const filteredChats = chats.filter(chat => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      chat.userName?.toLowerCase().includes(q) ||
+      chat.userEmail?.toLowerCase().includes(q) ||
+      chat.sessionId.toLowerCase().includes(q) ||
+      chat.user?.accountNumber?.toLowerCase().includes(q)
+    );
+  });
+
+  // Define available filters based on role
+  const filterOptions: { key: 'all' | 'open' | 'locked' | 'closed' | 'unread'; label: string }[] = 
+    role === 'SYSTEM_ADMIN' 
+      ? [
+          { key: 'all', label: 'All' },
+          { key: 'unread', label: 'Unread' },
+          { key: 'open', label: 'Open' },
+          { key: 'locked', label: 'Locked' },
+          { key: 'closed', label: 'Closed' },
+        ]
+      : [
+          { key: 'all', label: 'All' },
+          { key: 'unread', label: 'Unread' },
+          { key: 'open', label: 'Open' },
+          { key: 'locked', label: 'My Chats' },
+        ];
+
   return (
     <div className={styles.panel}>
-      {/* Filter tabs */}
-      <div className={styles.filters}>
-        {(['all', 'open', 'locked', 'closed'] as const).map((key) => (
-            <button
+      {/* Header */}
+      <div className={styles.header}>
+        <div className={styles.headerTitle}>
+          <MessageSquare size={20} className={styles.headerIcon} />
+          <h2>Messages</h2>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className={styles.searchWrapper}>
+        <div className={styles.searchBox}>
+          <Search size={18} className={styles.searchIcon} />
+          <input
+            type="text"
+            placeholder="Search conversations..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={styles.searchInput}
+          />
+        </div>
+      </div>
+
+      {/* Filter Pills */}
+      <div className={styles.filterPills}>
+        {filterOptions.map(({ key, label }) => (
+          <button
             key={key}
-            className={`${styles.filterBtn} ${filter === key ? styles.active : ''}`}
+            className={`${styles.filterPill} ${filter === key ? styles.active : ''}`}
             onClick={() => onFilterChange(key)}
-            >
-            {key.charAt(0).toUpperCase() + key.slice(1)}
-            </button>
+          >
+            {label}
+          </button>
         ))}
       </div>
 
-      {/* Chat list */}
+      {/* Chat List */}
       <div className={styles.list}>
         {loading ? (
-          <div className={styles.loading}>Loading chats...</div>
-        ) : chats.length === 0 ? (
-          <div className={styles.empty}>No chats found</div>
+          <div className={styles.loading}>
+            <div className={styles.loadingSpinner}></div>
+            <span>Loading chats...</span>
+          </div>
+        ) : filteredChats.length === 0 ? (
+          <div className={styles.empty}>
+            <MessageSquare size={32} className={styles.emptyIcon} />
+            <span>No conversations found</span>
+          </div>
         ) : (
-          chats.map((chat) => (
+          filteredChats.map((chat) => (
             <div
               key={chat.id}
               className={`${styles.chatItem} ${selectedChatId === chat.id ? styles.selected : ''}`}
               onClick={() => onSelectChat(chat.id)}
             >
-              <div className={styles.chatAvatar}>
-                {(chat.userName || chat.userEmail || chat.sessionId).charAt(0).toUpperCase()}
+              {/* Avatar with online indicator */}
+              <div className={styles.avatarWrapper}>
+                <div className={styles.avatar}>
+                  {(chat.userName || chat.userEmail || chat.sessionId).charAt(0).toUpperCase()}
+                </div>
+                {chat.status === 'OPEN' && <div className={styles.onlineIndicator} />}
               </div>
 
+              {/* Chat Info */}
               <div className={styles.chatInfo}>
-                <div className={styles.chatName}>
-                  {chat.userName || chat.userEmail || chat.sessionId.substring(0, 8)}
+                <div className={styles.chatHeader}>
+                  <span className={styles.chatName}>
+                    {chat.userName || chat.userEmail || `Session ${chat.sessionId.slice(0, 8)}`}
+                  </span>
+                  <span className={styles.chatTime}>{formatTime(chat.lastMessageAt)}</span>
                 </div>
                 <div className={styles.chatPreview}>
-                  {chat.status === 'CLOSED' ? 'Chat closed' : 'Click to view'}
+                  {getLastMessage(chat)}
                 </div>
-              </div>
-
-              {(chat.unreadCount || 0) > 0 && (
-                <div className="flex-shrink-0 mx-2">
-                   <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
-                     <span className="text-[10px] font-bold text-white leading-none">
-                       {chat.unreadCount && chat.unreadCount > 9 ? '9+' : chat.unreadCount}
-                     </span>
-                   </div>
-                </div>
-              )}
-
-              <div className={styles.chatMeta}>
-                <div className={styles.chatTime}>{formatTime(chat.lastMessageAt)}</div>
-                <div className="flex items-center gap-1">
-                   <div className={`${styles.chatStatus} ${styles[chat.status.toLowerCase()]}`}>
-                    {chat.isLocked && !chat.lockedByMe && '🔒'}
-                    {chat.lockedByMe && '👤'}
-                  </div>
-                  {canDelete && onDelete && (
-                    <button
-                      className="p-1 hover:bg-red-100 text-slate-400 hover:text-red-600 rounded transition-colors ml-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(chat.id);
-                      }}
-                      title="Delete Chat"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      </svg>
-                    </button>
+                <div className={styles.chatMeta}>
+                  {getStatusBadge(chat)}
+                  
+                  {/* Unread Count */}
+                  {chat.unreadCount && chat.unreadCount > 0 && (
+                    <div className={styles.unreadBadge}>
+                      {chat.unreadCount > 9 ? '9+' : chat.unreadCount}
+                    </div>
                   )}
                 </div>
               </div>
+
+              {/* Delete Button (SYSTEM_ADMIN only) */}
+              {canDelete && onDelete && (
+                <button
+                  className={styles.deleteBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(chat.id);
+                  }}
+                  title="Delete Chat"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
           ))
         )}

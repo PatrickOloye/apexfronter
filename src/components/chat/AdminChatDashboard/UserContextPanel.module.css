@@ -1,0 +1,373 @@
+/* UserContextPanel - Right Sidebar for User Details */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 320px;
+    background: #ffffff;
+    border-left: 1px solid #e2e8f0;
+    padding: 24px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #e2e8f0 transparent;
+    position: relative;
+}
+
+.panel::-webkit-scrollbar {
+    width: 4px;
+}
+
+.panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.panel::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+/* Close Button */
+.closeBtn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 8px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #94a3b8;
+    cursor: pointer;
+    display: none;
+}
+
+.closeBtn:hover {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+/* Loading */
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    gap: 12px;
+    color: #94a3b8;
+}
+
+.loadingSpinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #e2e8f0;
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Profile Section */
+.profileSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 28px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
+}
+
+.userName {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 4px;
+    text-align: center;
+}
+
+.memberSince {
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 0;
+}
+
+/* Balance Widget */
+.balanceWidget {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.balanceHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.balanceLabel {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6366f1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.balanceAmount {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.accountNumber {
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* Info Section */
+.infoSection {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.infoRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.infoIcon {
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.infoText {
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* Transactions Section */
+.transactionsSection {
+    margin-bottom: 24px;
+}
+
+.sectionTitle {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.75px;
+    margin: 0 0 16px;
+}
+
+.transactionsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.transactionItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.txInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.txDescription {
+    font-size: 13px;
+    font-weight: 500;
+    color: #0f172a;
+}
+
+.txDate {
+    font-size: 10px;
+    color: #94a3b8;
+}
+
+.txAmount {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.txAmount.credit {
+    color: #22c55e;
+}
+
+.txAmount.debit {
+    color: #ef4444;
+}
+
+.viewAllBtn {
+    width: 100%;
+    margin-top: 16px;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6366f1;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.viewAllBtn:hover {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+/* Actions Section */
+.actionsSection {
+    margin-top: auto;
+}
+
+.actionsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.actionBtn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 16px;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 12px;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.actionBtn:hover {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.actionBtn span {
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.actionBtn.danger {
+    grid-column: span 2;
+    margin-top: 8px;
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+}
+
+.actionBtn.danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+/* No User Data */
+.noUserData {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.noUserIcon {
+    color: #cbd5e1;
+    margin-bottom: 12px;
+}
+
+.noUserData p {
+    font-weight: 600;
+    color: #64748b;
+    margin: 0 0 4px;
+}
+
+.noUserData span {
+    font-size: 12px;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+    .panel {
+        background: #16222e;
+        border-left-color: #334155;
+    }
+
+    .avatar {
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+    }
+
+    .userName {
+        color: #f1f5f9;
+    }
+
+    .balanceWidget {
+        background: rgba(99, 102, 241, 0.1);
+        border-color: rgba(99, 102, 241, 0.2);
+    }
+
+    .balanceAmount {
+        color: #f1f5f9;
+    }
+
+    .txDescription {
+        color: #e2e8f0;
+    }
+
+    .actionBtn {
+        background: #1e293b;
+    }
+
+    .actionBtn:hover {
+        background: #334155;
+    }
+}
+
+/* Mobile */
+@media (max-width: 1024px) {
+    .panel {
+        position: fixed;
+        right: 0;
+        top: 0;
+        height: 100vh;
+        z-index: 50;
+        box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .closeBtn {
+        display: block;
+    }
+}

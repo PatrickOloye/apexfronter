@@ -10,8 +10,8 @@ export function middleware(request: NextRequest) {
     // Based on auth.service.ts, it sets 'apex_token' and 'refresh_token'.
     const token = request.cookies.get('apex_token')?.value || request.cookies.get('refresh_token')?.value;
 
-    // Also check for our client-side indicator
-    const isAuthenticated = !!token || request.cookies.get('is_authenticated')?.value === 'true';
+    // Only rely on server-issued cookies for auth
+    const isAuthenticated = !!token;
 
     // Define routes that should be inaccessible when logged in
     const authRoutes = ['/signin', '/signup', '/forgot-password'];

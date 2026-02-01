@@ -1,11 +1,11 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import Image from "next/image";
 import Menu from "@/libs/Menu";
 import Navbar from "@/components/Nevbar";
 import AppLink from "@/components/AppLink";
 import AuthGuard from "@/components/AuthGuard";
+import { BrandMark } from "@/components/BrandMark";
 import { BRAND } from "@/config/brand";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -44,6 +44,7 @@ export default function DashboardLayout({
   }, [isSidebarOpen]);
 
   return (
+    <AuthGuard>
     <div className="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-slate-50">
       {/* MOBILE OVERLAY & DRAWER */}
       <AnimatePresence>
@@ -66,19 +67,9 @@ export default function DashboardLayout({
             >
               {/* Drawer Header */}
               <div className="flex items-center justify-between p-6 border-b border-slate-800/50">
-                <div className="flex items-center gap-3">
-                   <Image 
-                      src={BRAND.logoSrc} 
-                      alt={`${BRAND.name} Logo`}
-                      width={32} 
-                      height={32} 
-                      className="brightness-0 invert object-contain" 
-                   />
-                   <div className="flex flex-col">
-                      <span className="text-emerald-400 text-[10px] font-bold leading-none tracking-widest uppercase">{BRAND.shortName}</span>
-                      <span className="text-white font-bold text-lg leading-none tracking-tight">BANK</span>
-                   </div>
-                </div>
+                 <div className="flex items-center gap-3">
+                   <BrandMark variant="dark" size="sm" className="brightness-0 invert" />
+                 </div>
                 <button 
                   onClick={() => setIsSidebarOpen(false)}
                   className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
@@ -117,17 +108,7 @@ export default function DashboardLayout({
             href="/"
             className="flex items-center justify-center lg:justify-start gap-2 w-full"
           >
-             <Image 
-                src={BRAND.logoSrc} 
-                alt={`${BRAND.name} Logo`} 
-                width={32} 
-                height={32}
-                className="brightness-0 invert object-contain"
-             />
-             <div className="hidden lg:flex flex-col">
-                <span className="text-emerald-400 text-[10px] font-bold leading-none tracking-widest uppercase">{BRAND.shortName}</span>
-                <span className="text-white font-bold text-lg leading-none tracking-tight">BANK</span>
-             </div>
+            <BrandMark variant="dark" size="sm" className="brightness-0 invert" />
           </AppLink>
         </div>
         {/* Menu */}
@@ -153,5 +134,6 @@ export default function DashboardLayout({
         </div>
       </div>
     </div>
+    </AuthGuard>
   );
 }

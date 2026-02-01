@@ -6,6 +6,8 @@ import Image from 'next/image';
 export interface SelectOption {
   value: string;
   label: string;
+  shortLabel?: string;
+  searchText?: string;
   image?: string;
   id?: string;
 }
@@ -19,6 +21,8 @@ interface SearchableSelectProps {
   disabled?: boolean;
   className?: string;
   searchable?: boolean;
+  showCheck?: boolean;
+  showImages?: boolean;
 }
 
 export default function SearchableSelect({
@@ -30,16 +34,19 @@ export default function SearchableSelect({
   disabled = false,
   className = '',
   searchable = true,
+  showCheck = true,
+  showImages = true,
 }: SearchableSelectProps) {
   const [query, setQuery] = useState('');
   
   const selectedOption = options.find((opt) => opt.value === value);
+  const inputPadding = showImages ? 'pl-3' : 'pl-4';
 
   const filteredOptions =
     query === ''
       ? options
       : options.filter((option) =>
-          option.label
+          (option.searchText || option.label)
             .toLowerCase()
             .replace(/\s+/g, '')
             .includes(query.toLowerCase().replace(/\s+/g, ''))
@@ -54,28 +61,32 @@ export default function SearchableSelect({
         )}
       <Combobox value={value} onChange={onChange} disabled={disabled}>
         <div className="relative mt-1">
-          <div className="relative w-full cursor-default overflow-hidden rounded-xl bg-white/5 border border-white/10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm transition-all duration-300 hover:bg-white/10">
+            <div className="relative w-full cursor-default overflow-hidden rounded-xl bg-white/5 border border-white/10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm transition-all duration-300 hover:bg-white/10">
             <div className="flex items-center w-full">
-                 <div className="pl-4">
-                     {selectedOption?.image && (
-                         <div className="relative w-5 h-5 rounded-full overflow-hidden">
-                           <Image 
-                             src={selectedOption.image} 
-                             alt="" 
-                             fill
-                             className="object-cover" 
-                           />
-                         </div>
-                     )}
-                 </div>
+                 {showImages && selectedOption?.image ? (
+                  <div className="pl-4">
+                      <div className="relative w-5 h-5 rounded-full overflow-hidden">
+                        <Image 
+                          src={selectedOption.image} 
+                          alt="" 
+                          fill
+                          className="object-cover" 
+                        />
+                      </div>
+                  </div>
+                 ) : null}
                 <Combobox.Input
-                className="w-full border-none py-4 pl-3 pr-10 text-sm leading-5 text-white bg-transparent focus:ring-0 focus:outline-none placeholder-slate-500"
-                displayValue={(val: string) => {
+                  className={`w-full border-none py-4 ${inputPadding} pr-10 text-sm leading-5 text-white bg-transparent focus:ring-0 focus:outline-none placeholder-slate-500`}
+                  displayValue={(val: string) => {
                     const opt = options.find((o) => o.value === val);
-                    return opt ? opt.label : '';
-                }}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={placeholder}
+                    return opt ? opt.shortLabel || opt.label : '';
+                  }}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={placeholder}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
                 />
             </div>
             
@@ -103,7 +114,9 @@ export default function SearchableSelect({
                   <Combobox.Option
                     key={option.id || option.value}
                     className={({ active }) =>
-                      `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                      `relative cursor-default select-none py-2 ${
+                        showCheck ? 'pl-10' : 'pl-4'
+                      } pr-4 transition-colors duration-150 ${
                         active ? 'bg-blue-600/20 text-blue-400' : 'text-slate-300'
                       }`
                     }
@@ -116,7 +129,7 @@ export default function SearchableSelect({
                             selected ? 'font-medium text-blue-400' : 'font-normal'
                           }`}
                         >
-                            {option.image && (
+                            {showImages && option.image && (
                             <div className="relative w-5 h-5 rounded-full overflow-hidden">
                               <Image 
                                 src={option.image} 
@@ -128,7 +141,7 @@ export default function SearchableSelect({
                           )}
                           {option.label}
                         </span>
-                        {selected ? (
+                        {showCheck && selected ? (
                           <span
                             className={`absolute inset-y-0 left-0 flex items-center pl-3 ${
                               active ? 'text-white' : 'text-blue-400'

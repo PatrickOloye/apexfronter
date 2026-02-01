@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { BrandMark } from '@/components/BrandMark';
 
 const Footer = () => {
   return (
@@ -8,11 +8,9 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Top Bar with Logo and Language Selector */}
         <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center">
-            <div className="w-16 h-16 bg-yellow-400 flex items-center justify-center">
-              <Image src="/logo.png" alt="Bank Logo" width={40} height={40} />
-            </div>
-            <div className="ml-2">
+          <div className="flex items-center gap-4">
+            <BrandMark variant="light" size="md" />
+            <div>
               <select className="bg-white text-blue-900 p-2 w-32">
                 <option>English</option>
                 <option>Français</option>

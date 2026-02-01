@@ -1,10 +1,9 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useLoading } from '../../../components/LoadingProvider';
-import { BRAND } from '../../../config/brand';
+import { BrandMark } from '../../../components/BrandMark';
 import { AuthService } from '../../../libs/server-actions/auth';
 
 export default function ForgotPassword() {
@@ -43,10 +42,7 @@ export default function ForgotPassword() {
 
       <header className="relative z-10 w-full py-6 px-8">
         <Link href="/" className="inline-flex items-center gap-2">
-            <div className="h-8 w-8 relative">
-            <Image src={BRAND.logoSrc} alt="Logo" fill className="object-contain"/>
-            </div>
-            <span className="text-2xl font-bold text-white">{BRAND.name}</span>
+          <BrandMark variant="dark" size="md" />
         </Link>
       </header>
 

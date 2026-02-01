@@ -39,10 +39,11 @@ export default function PhoneCodeSelect({
             const code = `${root}${suffix}`;
             
             return {
-              id: c.cca2, // Use CCA2 as unique ID
+              id: c.cca2,
               value: code,
-              label: `${code} ${c.name.common}`,
-              image: c.flags?.svg || c.flags?.png,
+              label: code,
+              shortLabel: code,
+              searchText: `${code} ${c.name.common}`,
             };
           })
           .sort((a: SelectOption, b: SelectOption) => a.label.localeCompare(b.label));
@@ -51,8 +52,8 @@ export default function PhoneCodeSelect({
       } catch (err) {
         console.error('Failed to load phone codes', err);
         setOptions([
-            { id: 'US', value: '+1', label: '+1 United States', image: 'https://flagcdn.com/us.svg' },
-            { id: 'GB', value: '+44', label: '+44 United Kingdom', image: 'https://flagcdn.com/gb.svg' },
+          { id: 'US', value: '+1', label: '+1', shortLabel: '+1', searchText: '+1 United States' },
+          { id: 'GB', value: '+44', label: '+44', shortLabel: '+44', searchText: '+44 United Kingdom' },
         ]);
       } finally {
         if (mounted) setLoading(false);
@@ -73,6 +74,8 @@ export default function PhoneCodeSelect({
             disabled={true}
             placeholder="Loading..."
             className={className}
+          showCheck={false}
+          showImages={false}
         />
       )
   }
@@ -86,6 +89,8 @@ export default function PhoneCodeSelect({
       placeholder={placeholder}
       disabled={disabled || loading}
       className={className}
+      showCheck={false}
+      showImages={false}
     />
   );
 }

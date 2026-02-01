@@ -5,6 +5,10 @@ export const AuthService = {
     const { data } = await api.post('/auth/signin', { email, password });
     return data?.data ?? data;
   },
+  async refresh(): Promise<any> {
+    const { data } = await api.post('/auth/refresh', {});
+    return data?.data ?? data;
+  },
   async getCurrentUser(): Promise<any> {
     const { data } = await api.get('/auth/me');
     return data?.data?.user ?? data?.user ?? data;

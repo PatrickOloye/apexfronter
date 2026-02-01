@@ -17,6 +17,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { TransactionForm, TransactionType } from '@/libs/server-actions/types';
+import { BrandMark } from '@/components/BrandMark';
+import { BRAND } from '@/config/brand';
 
 // Define props interface for the component
 interface CreateTransactionModalProps {
@@ -160,6 +162,9 @@ const CreateTransactionModal = ({
 
   // Custom styles for inputs to only show bottom border
   const inputStyle = "border-t-0 border-l-0 border-r-0 border-b-2 border-gray-300 focus:border-blue-500 rounded-none focus:ring-0";
+
+  const brandShort = BRAND.shortName.toUpperCase();
+  const brandLetters = brandShort.split('');
   
   // Style to hide number input spinners
   const hideNumberInputSpinners = `
@@ -195,10 +200,8 @@ const CreateTransactionModal = ({
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white">
           <div className="flex flex-col items-center justify-center">
             {/* Logo */}
-            <div className="text-4xl font-extrabold tracking-wider mb-2">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">
-                APEX BANKING
-              </span>
+            <div className="mb-3">
+              <BrandMark variant="dark" size="lg" />
             </div>
             
             {/* Subtitle with animated underline */}
@@ -222,14 +225,19 @@ const CreateTransactionModal = ({
                   {/* APEX Text with Glow Effect */}
                   <div className="relative mb-4">
                     <div className="text-5xl font-bold tracking-widest text-blue-500 animate-pulse">
-                      <span className="inline-block animate-bounce" style={{animationDelay: '0ms'}}>A</span>
-                      <span className="inline-block animate-bounce" style={{animationDelay: '100ms'}}>P</span>
-                      <span className="inline-block animate-bounce" style={{animationDelay: '200ms'}}>E</span>
-                      <span className="inline-block animate-bounce" style={{animationDelay: '300ms'}}>X</span>
+                      {brandLetters.map((letter, index) => (
+                        <span
+                          key={`${letter}-${index}`}
+                          className="inline-block animate-bounce"
+                          style={{ animationDelay: `${index * 100}ms` }}
+                        >
+                          {letter}
+                        </span>
+                      ))}
                     </div>
                     {/* Blue glow effect under text */}
                     <div className="absolute inset-0 text-5xl font-bold tracking-widest text-blue-500 blur-lg opacity-70 animate-pulse">
-                      APEX
+                      {brandShort}
                     </div>
                   </div>
                   

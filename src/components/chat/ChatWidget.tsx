@@ -124,8 +124,11 @@ export function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
 
     const unsubClosed = on('chat:closed', () => {
       setIsClosed(true);
+      setMessages([]);
+      setInputValue('');
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('chat-session-id');
+        sessionStorage.removeItem('chat-draft');
       }
     });
 
@@ -226,6 +229,18 @@ export function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
     sendTyping(false);
     
     if (response.error) {
+      // Handle CHAT_CLOSED error code specifically
+      if ((response as any).code === 'CHAT_CLOSED' || 
+          (typeof response.error === 'string' && response.error.toLowerCase().includes('closed'))) {
+        setIsClosed(true);
+        setMessages(prev => prev.filter(m => m.id !== idempotencyKey)); // Remove optimistic
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('chat-session-id');
+        }
+        toast.info('This chat has been closed. Please start a new conversation.');
+        return;
+      }
+      
       // Auto-recover if session not found (e.g. deleted by admin)
       if (typeof response.error === 'string' && response.error.toLowerCase().includes('not found')) {
           console.log('Session not found, creating new session...');

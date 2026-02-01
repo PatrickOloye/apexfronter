@@ -12,6 +12,7 @@ interface AuthStore {
   login: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
   fetchCurrentUser: () => Promise<void>;
+  setSession: (data: { token?: string; user?: any | null }) => void;
   clearError: () => void;
 }
 
@@ -42,6 +43,15 @@ export const useAuthStore = create<AuthStore>()(
   devtools(
     persist(
       (set) => ({
+        setSession: ({ token, user }) => {
+          if (token) {
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          }
+          set((state) => ({
+            token: token ?? state.token,
+            user: typeof user !== 'undefined' ? user : state.user,
+          }));
+        },
         user: null,
         token: null,
         isLoading: false,
@@ -102,6 +112,10 @@ export const useAuthStore = create<AuthStore>()(
           if (typeof window !== 'undefined') {
             try {
               localStorage.removeItem('apex-auth');
+              // Clear chat session data on logout
+              sessionStorage.removeItem('chat-session-id');
+              sessionStorage.removeItem('chat-user-info');
+              sessionStorage.removeItem('chat-draft');
             } catch (e) {
               // ignore
             }
@@ -147,13 +161,31 @@ export const useAuthStore = create<AuthStore>()(
               }
               */
 
+              if (process.env.NODE_ENV !== 'production') {
+                console.warn('[AuthStore] fetchCurrentUser 401/404 encountered. Keeping session state for resilience. Error:', err);
+              }
+
+              // Also log current persisted storage token for debugging (best-effort)
+              try {
+                const stored = typeof window !== 'undefined' ? localStorage.getItem('apex-auth') : null;
+                if (process.env.NODE_ENV !== 'production') {
+                  console.log('[AuthStore] fetchCurrentUser -> localStorage apex-auth:', stored);
+                }
+              } catch (e) {
+                if (process.env.NODE_ENV !== 'production') {
+                  console.warn('[AuthStore] fetchCurrentUser -> failed to read localStorage', e);
+                }
+              }
+
               set({
                 // user: null,  <-- ENABLE logic to keep user in store
                 // token: null, <-- ENABLE logic to keep token in store
                 error: 'Session expired. Please refresh or login again.'
               });
 
-              console.warn('[AuthStore] fetchCurrentUser 401/404 encountered. Keeping session state for resilience. Error:', err);
+              if (process.env.NODE_ENV !== 'production') {
+                console.warn('[AuthStore] fetchCurrentUser handled 401/404. State preserved to avoid auto-wipe.');
+              }
 
               /*
               // Ensure localStorage is cleared
@@ -186,6 +218,12 @@ export const useAuthStore = create<AuthStore>()(
             if (typeof document !== 'undefined') {
               document.cookie = `is_authenticated=true; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
             }
+            // Debug logging for hydration
+            try {
+              if (process.env.NODE_ENV !== 'production') {
+                console.log('[AuthStore] Rehydrated token present; setting axios default Authorization. tokenExists=true');
+              }
+            } catch (e) { }
           }
         }
       }

@@ -13,6 +13,7 @@ import { DashboardHeader } from './DashboardHeader';
 import { ChatListPanel } from './ChatListPanel';
 import { ChatWorkspace } from './ChatWorkspace';
 import { ChatHeader } from './ChatHeader';
+import { UserContextPanel } from './UserContextPanel';
 import { 
   CreditCard,
   Shield,
@@ -20,6 +21,8 @@ import {
   User as UserIcon,
   ArrowLeft,
   Lock,
+  PanelRightClose,
+  PanelRightOpen,
 } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 
@@ -36,7 +39,7 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
   const [selectedChat, setSelectedChat] = useState<ChatSession | null>(null);
   const [stats, setStats] = useState<ChatStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'open' | 'locked' | 'closed'>('all');
+  const [filter, setFilter] = useState<'all' | 'open' | 'locked' | 'closed' | 'unread'>('all');
   const [manualOffline, setManualOffline] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showUserDetailsPanel, setShowUserDetailsPanel] = useState(true);
@@ -76,8 +79,27 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
       const statusMap: Record<string, string | undefined> = {
         all: undefined, open: 'OPEN', locked: 'LOCKED', closed: 'CLOSED'
       };
-      const res = await ChatAPI.getSessions({ status: statusMap[filter] });
-      const loadedChats = res.chats || [];
+
+      const isAdmin = role === 'ADMIN';
+      const res = await ChatAPI.getSessions({
+        status: isAdmin ? undefined : statusMap[filter],
+        available: isAdmin ? true : undefined,
+      });
+
+      let loadedChats = res.chats || [];
+
+      if (isAdmin) {
+        if (filter === 'open') {
+          loadedChats = loadedChats.filter(c => c.status === 'OPEN');
+        } else if (filter === 'locked') {
+          loadedChats = loadedChats.filter(c => c.lock?.adminId === user?.id);
+        } else if (filter === 'unread') {
+          loadedChats = loadedChats.filter(c => (c.unreadCount || 0) > 0);
+        }
+      } else if (filter === 'unread') {
+        loadedChats = loadedChats.filter(c => (c.unreadCount || 0) > 0);
+      }
+
       // Enforce sort by last message
       loadedChats.sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
       setChats(loadedChats);
@@ -86,7 +108,7 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
     } finally {
         setLoading(false);
     }
-  }, [filter]);
+  }, [filter, role, user?.id]);
 
   const loadStats = async () => {
     try {
@@ -223,11 +245,24 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
     });
 
     const unsubMessage = on('chat:message', (message: ChatMessage) => {
-      // Update selected chat
+      // Update selected chat with deduplication
       if (selectedChat && message.chatId === selectedChat.id) {
         setSelectedChat(prev => {
           if (!prev) return prev;
+          
+          // Dedupe by message ID
           if (prev.messages?.some(m => m.id === message.id)) return prev;
+          
+          // Dedupe by idempotencyKey (for optimistic updates)
+          if (message.idempotencyKey && prev.messages?.some(m => m.idempotencyKey === message.idempotencyKey)) {
+            // Replace optimistic message with confirmed one
+            return {
+              ...prev,
+              messages: prev.messages.map(m => 
+                m.idempotencyKey === message.idempotencyKey ? message : m
+              ).sort((a, b) => (a.sequence || 0) - (b.sequence || 0)),
+            };
+          }
           
           return {
             ...prev,
@@ -268,12 +303,25 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
          loadStats();
     });
 
+    // Listen for lock takeover (when SYSTEM_ADMIN takes over a chat)
+    const unsubTakeover = on('chat:lock:takeover', (data: any) => {
+        if (selectedChat?.id === data.chatId) {
+            toast.warning('Chat Taken Over', {
+                description: data.message || 'A System Admin has taken over this chat.',
+                duration: 5000
+            });
+            setSelectedChat(null); // Deselect the chat
+            loadChats();
+        }
+    });
+
     return () => {
         unsubNew();
         unsubUpdate();
         unsubLock();
         unsubMessage();
         unsubClosed();
+        unsubTakeover();
     };
   }, [isConnected, on, selectedChat, loadChats, handleSelectChat]); // Added missing deps
 
@@ -321,7 +369,9 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
                     ...c,
                     // Check if locked by me
                     lockedByMe: c.lock?.adminId === user?.id || activeChatId === c.id,
-                    isLocked: c.status === 'LOCKED'
+                    isLocked: c.status === 'LOCKED',
+                    // Map user properties for ChatListItem compatibility
+                    user: c.user ? { accountNumber: (c.user as any).accountNumber } : undefined,
                 }))}
                 selectedChatId={selectedChat?.id}
                 onSelectChat={handleSelectChat}
@@ -330,6 +380,7 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
                 loading={loading}
                 canDelete={role === 'SYSTEM_ADMIN'}
                 onDelete={(id) => setChatToDelete(chats.find(c => c.id === id) || null)}
+                role={role}
             />
         </div>
 
@@ -353,6 +404,15 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
                         </div>
                         
                         <div className="flex items-center gap-3">
+                             {/* Toggle User Details Panel */}
+                             <button 
+                                onClick={() => setShowUserDetailsPanel(!showUserDetailsPanel)}
+                                className="p-2 hover:bg-slate-100 rounded-lg transition-colors hidden lg:flex"
+                                title={showUserDetailsPanel ? 'Hide User Details' : 'Show User Details'}
+                             >
+                                {showUserDetailsPanel ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
+                             </button>
+                             
                              {selectedChat.status !== 'CLOSED' && (
                                  <button 
                                     onClick={() => setShowCloseModal(true)}
@@ -373,7 +433,35 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
                             lockedByMe={selectedChat.lock?.adminId === user?.id || activeChatId === selectedChat.id}
                             isLocked={selectedChat.status === 'LOCKED'}
                         />
-                         {/* User Details could go here (skipped for brevity to focus on core fix, but preserving layout if requested) */}
+                        
+                        {/* User Context Panel - Right Side */}
+                        {showUserDetailsPanel && (
+                            <UserContextPanel
+                                user={selectedUserDetails ? {
+                                    id: selectedUserDetails.id,
+                                    firstName: selectedUserDetails.firstName,
+                                    lastName: selectedUserDetails.lastName,
+                                    email: selectedUserDetails.email,
+                                    accountNumber: selectedUserDetails.accountNumber,
+                                    balance: (selectedUserDetails as any).balance,
+                                    createdAt: (selectedUserDetails as any).createdAt,
+                                    city: (selectedUserDetails as any).city,
+                                    state: (selectedUserDetails as any).state,
+                                    transactions: (selectedUserDetails as any).transactions,
+                                } : null}
+                                chat={{
+                                    id: selectedChat.id,
+                                    userName: selectedChat.userName,
+                                    userEmail: selectedChat.userEmail,
+                                    userId: selectedChat.userId,
+                                    createdAt: selectedChat.createdAt,
+                                }}
+                                loading={loadingUserDetails}
+                                onClose={() => setShowUserDetailsPanel(false)}
+                                onViewProfile={(userId) => router.push(`/dashboard/system-admin/users/${userId}`)}
+                                role={role}
+                            />
+                        )}
                    </div>
                 </div>
             ) : (

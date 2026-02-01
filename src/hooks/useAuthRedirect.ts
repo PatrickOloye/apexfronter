@@ -14,7 +14,9 @@ export function useAuthRedirect() {
         // 1. Regular Check
         const checkAuth = () => {
             // Check store state OR client-side cookie
-            const hasCookie = typeof document !== 'undefined' && document.cookie.includes('is_authenticated=true');
+            const hasCookie = typeof document !== 'undefined' && (
+                document.cookie.includes('apex_token=') || document.cookie.includes('refresh_token=')
+            );
             const isAuth = !!user || hasCookie;
 
             if (isAuth) {

@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useLoading } from '../../../components/LoadingProvider';
-import { BRAND } from '../../../config/brand';
+import { BrandMark } from '../../../components/BrandMark';
 import { AuthService } from '../../../libs/server-actions/auth';
 
 export default function ResetPassword() {
@@ -67,7 +67,7 @@ export default function ResetPassword() {
 
       <header className="relative z-10 w-full py-6 px-8">
         <Link href="/" className="inline-flex items-center gap-2">
-            <span className="text-2xl font-bold text-white">{BRAND.name}</span>
+          <BrandMark variant="dark" size="md" />
         </Link>
       </header>
 

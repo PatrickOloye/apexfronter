@@ -18,11 +18,24 @@ function ClientSessionManager() {
 
   // Validate session on mount (handles DB resets/server restarts)
   useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => registration.unregister());
+      });
+    }
+
     // Only attempt to validate session if we have a persisted token or an auth cookie.
     // This avoids making an unauthenticated call too early (before zustand persist hydration)
     try {
-      const hasLocal = typeof window !== 'undefined' && !!localStorage.getItem('apex-auth');
-      const hasCookie = typeof window !== 'undefined' && document.cookie.split('; ').some(c => c.startsWith('apex_token='));
+      let hasLocal = false;
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('apex-auth');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          hasLocal = !!parsed?.state?.token;
+        }
+      }
+      const hasCookie = typeof window !== 'undefined' && document.cookie.split('; ').some(c => c.startsWith('apex_token=') || c.startsWith('refresh_token='));
       if (hasLocal || hasCookie) {
         fetchCurrentUser().catch(() => {
           // Error handling is done inside the store (clears user if 401/404)
@@ -40,7 +53,9 @@ function ClientSessionManager() {
     }
 
     if (currentVersion !== newVersion) {
-      console.log(`Server restart detected: ${currentVersion} -> ${newVersion}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Server restart detected: ${currentVersion} -> ${newVersion}`);
+      }
       sessionStorage.setItem('apex-server-start', newVersion);
       
       const path = window.location.pathname || '/';
@@ -101,7 +116,9 @@ function ClientSessionManager() {
       };
 
       const onDisconnect = (reason: any) => {
-        console.log('Socket disconnected:', reason);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('Socket disconnected:', reason);
+        }
         // Do not auto-logout on disconnect. Let Reconnection logic handle it.
         // potentially show a toast if it persists, but silent is better for short interruptions.
       };
