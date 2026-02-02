@@ -68,7 +68,7 @@ export default function DashboardLayout({
               {/* Drawer Header */}
               <div className="flex items-center justify-between p-6 border-b border-slate-800/50">
                  <div className="flex items-center gap-3">
-                   <BrandMark variant="dark" size="sm" className="brightness-0 invert" />
+                   <BrandMark variant="dark" size="md" className="brightness-0 invert" />
                  </div>
                 <button 
                   onClick={() => setIsSidebarOpen(false)}
@@ -108,7 +108,7 @@ export default function DashboardLayout({
             href="/"
             className="flex items-center justify-center lg:justify-start gap-2 w-full"
           >
-            <BrandMark variant="dark" size="sm" className="brightness-0 invert" />
+            <BrandMark variant="dark" size="md" className="brightness-0 invert" />
           </AppLink>
         </div>
         {/* Menu */}

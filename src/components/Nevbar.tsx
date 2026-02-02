@@ -299,7 +299,7 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
   }
 
   return (
-    <div className={`sticky top-0 z-40 flex items-center justify-between px-4 py-2.5 transition-all duration-300 ${
+    <div className={`sticky top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-2.5 transition-all duration-300 w-full ${
       isScrolled ? 'bg-white/80 backdrop-blur border-b border-slate-200 shadow-sm' : 'bg-transparent'
     }`}>
       {/* LEFT SIDE: HAMBURGER & SEARCH */}

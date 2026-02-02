@@ -203,7 +203,7 @@ const Navbar: React.FC = () => {
   };
 
   // Determine if logged in - note the explicit check for null because user could be defined but empty
-  const isLoggedIn = user !== null && typeof user === 'object';
+  const isLoggedIn = user !== null && typeof user === 'object' && user?.id;
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -454,7 +454,7 @@ const Navbar: React.FC = () => {
 
                     {/* Desktop User Dropdown */}
                     {userMenuOpen && (
-                      <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-2xl z-[100] py-1 border border-slate-100">
+                      <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-2xl z-[9999] py-1 border border-slate-100">
                         {/* User Info */}
                         <div className="px-4 py-3 border-b border-slate-100">
                           <div className="flex items-center gap-3">
