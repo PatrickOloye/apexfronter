@@ -30,9 +30,9 @@ export function DashboardHeader({
   stats,
 }: DashboardHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row justify-between items-center px-4 md:px-6 py-3 md:py-4 bg-white/80 backdrop-blur-md border-b border-slate-200 z-10 shrink-0 gap-3 md:gap-0">
+    <div className="flex flex-col md:flex-row justify-between items-center px-4 md:px-6 py-3 md:py-4 bg-white border-b border-slate-200 z-10 shrink-0 gap-3 md:gap-0">
       <div className="flex items-center justify-between w-full md:w-auto gap-4">
-        <h1 className="text-lg md:text-xl font-bold text-slate-900 tracking-tight">Support Chats</h1>
+        <h1 className="text-lg md:text-2xl font-bold text-slate-800 tracking-tight">Chat Management</h1>
         {userRole?.toUpperCase() === 'SYSTEM_ADMIN' && (
           <button
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
@@ -53,17 +53,17 @@ export function DashboardHeader({
       </div>
 
       {stats && (
-        <div className="flex w-full md:w-auto overflow-x-auto gap-2 p-1 bg-white border border-slate-200 rounded-xl md:rounded-full shadow-sm text-xs md:text-sm no-scrollbar">
-          <span className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg md:rounded-full font-medium whitespace-nowrap">
+        <div className="flex w-full md:w-auto overflow-x-auto gap-2 p-1 bg-slate-50 border border-slate-200 rounded-xl md:rounded-full shadow-sm text-xs md:text-sm no-scrollbar">
+          <span className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg md:rounded-full font-medium whitespace-nowrap">
             <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
             {stats.open} Open
           </span>
-          <span className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg md:rounded-full font-medium whitespace-nowrap">
+          <span className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg md:rounded-full font-medium whitespace-nowrap">
             <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
             {stats.locked} Active
           </span>
-          <span className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-600 rounded-lg md:rounded-full font-medium whitespace-nowrap">
-            <span className="w-1.5 h-1.5 bg-slate-400 rounded-full" />
+          <span className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg md:rounded-full font-medium whitespace-nowrap">
+            <span className="w-1.5 h-1.5 bg-slate-500 rounded-full" />
             {stats.closed} Closed
           </span>
         </div>

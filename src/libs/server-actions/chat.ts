@@ -10,12 +10,18 @@ export const ChatAPI = {
         page?: number;
         limit?: number;
         available?: boolean;
+        filterByAdminId?: string;
+        filterByEmail?: string;
+        filterByAccountNumber?: string;
     }): Promise<ChatListResponse> {
         const queryParams = new URLSearchParams();
         if (params?.status) queryParams.append('status', params.status);
         if (params?.page) queryParams.append('page', params.page.toString());
         if (params?.limit) queryParams.append('limit', params.limit.toString());
         if (params?.available) queryParams.append('available', 'true');
+        if (params?.filterByAdminId) queryParams.append('filterByAdminId', params.filterByAdminId);
+        if (params?.filterByEmail) queryParams.append('filterByEmail', params.filterByEmail);
+        if (params?.filterByAccountNumber) queryParams.append('filterByAccountNumber', params.filterByAccountNumber);
 
         const response = await api.get(`/chat/sessions?${queryParams.toString()}`);
         return response.data.data;

@@ -39,10 +39,17 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
   const [selectedChat, setSelectedChat] = useState<ChatSession | null>(null);
   const [stats, setStats] = useState<ChatStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'open' | 'locked' | 'closed' | 'unread'>('all');
+  const [filter, setFilter] = useState<'all' | 'open' | 'locked' | 'closed' | 'unread' | 'me'>('all');
   const [manualOffline, setManualOffline] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showUserDetailsPanel, setShowUserDetailsPanel] = useState(true);
+  
+  // Advanced Filters (SYSTEM_ADMIN only)
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filterByAdminId, setFilterByAdminId] = useState<string>('');
+  const [filterByEmail, setFilterByEmail] = useState<string>('');
+  const [filterByAccountNumber, setFilterByAccountNumber] = useState<string>('');
+  const [availableAdmins, setAvailableAdmins] = useState<AdminUser[]>([]);
   
   // User Details
   const [selectedUserDetails, setSelectedUserDetails] = useState<AdminUser | null>(null);
@@ -77,14 +84,23 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
   const loadChats = React.useCallback(async () => {
     try {
       const statusMap: Record<string, string | undefined> = {
-        all: undefined, open: 'OPEN', locked: 'LOCKED', closed: 'CLOSED'
+        all: undefined, open: 'OPEN', locked: 'LOCKED', closed: 'CLOSED', me: undefined
       };
 
       const isAdmin = role === 'ADMIN';
-      const res = await ChatAPI.getSessions({
+      const queryParams: any = {
         status: isAdmin ? undefined : statusMap[filter],
         available: isAdmin ? true : undefined,
-      });
+      };
+
+      // Add advanced filters (SYSTEM_ADMIN only)
+      if (role === 'SYSTEM_ADMIN') {
+        if (filterByAdminId) queryParams.filterByAdminId = filterByAdminId;
+        if (filterByEmail) queryParams.filterByEmail = filterByEmail;
+        if (filterByAccountNumber) queryParams.filterByAccountNumber = filterByAccountNumber;
+      }
+
+      const res = await ChatAPI.getSessions(queryParams);
 
       let loadedChats = res.chats || [];
 
@@ -95,9 +111,15 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
           loadedChats = loadedChats.filter(c => c.lock?.adminId === user?.id);
         } else if (filter === 'unread') {
           loadedChats = loadedChats.filter(c => (c.unreadCount || 0) > 0);
+        } else if (filter === 'me') {
+          // Show chats where current admin is locked/responding to
+          loadedChats = loadedChats.filter(c => c.lock?.adminId === user?.id || (c.status === 'OPEN' && !c.lock?.adminId));
         }
       } else if (filter === 'unread') {
         loadedChats = loadedChats.filter(c => (c.unreadCount || 0) > 0);
+      } else if (filter === 'me') {
+        // For SYSTEM_ADMIN: "Me" means chats assigned to this admin
+        loadedChats = loadedChats.filter(c => c.lock?.adminId === user?.id);
       }
 
       // Enforce sort by last message
@@ -108,7 +130,7 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
     } finally {
         setLoading(false);
     }
-  }, [filter, role, user?.id]);
+  }, [filter, role, user?.id, filterByAdminId, filterByEmail, filterByAccountNumber]);
 
   const loadStats = async () => {
     try {
@@ -202,6 +224,23 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
         connect();
     }
   }, [manualOffline, connect]);
+
+  // Load available admins (SYSTEM_ADMIN only)
+  useEffect(() => {
+    if (role === 'SYSTEM_ADMIN') {
+      // Fetch both ADMIN and SYSTEM_ADMIN users for comprehensive filtering
+      Promise.all([
+        AdminService.getAllUsers({ role: 'ADMIN', limit: 100 }),
+        AdminService.getAllUsers({ role: 'SYSTEM_ADMIN', limit: 100 }),
+      ])
+        .then(([adminsResponse, sysAdminsResponse]) => {
+          const admins = adminsResponse.data || [];
+          const sysAdmins = sysAdminsResponse.data || [];
+          setAvailableAdmins([...sysAdmins, ...admins]);
+        })
+        .catch(err => console.error('Failed to load admins:', err));
+    }
+  }, [role]);
 
   // Load Data
   // Load Data
@@ -356,6 +395,91 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
         onToggleConnection={() => manualOffline ? (setManualOffline(false), connect()) : (setManualOffline(true), disconnect())}
         stats={stats ? { open: stats.open, locked: stats.locked, closed: stats.closed } : null}
       />
+      
+      {/* Advanced Filters (SYSTEM_ADMIN only) */}
+      {role === 'SYSTEM_ADMIN' && (
+        <div className="bg-white border-b border-slate-200 px-6 py-3">
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors"
+          >
+            <svg className={`w-4 h-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+            Advanced Filters
+            {(filterByAdminId || filterByEmail || filterByAccountNumber) && (
+              <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">Active</span>
+            )}
+          </button>
+          
+          {showAdvancedFilters && (
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Filter by Admin */}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Filter by Admin
+                </label>
+                <select
+                  value={filterByAdminId}
+                  onChange={(e) => setFilterByAdminId(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All Admins</option>
+                  {availableAdmins.map(admin => (
+                    <option key={admin.id} value={admin.id}>
+                      {admin.firstName} {admin.lastName} ({admin.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter by Email */}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Filter by User Email
+                </label>
+                <input
+                  type="text"
+                  value={filterByEmail}
+                  onChange={(e) => setFilterByEmail(e.target.value)}
+                  placeholder="Search by email..."
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Filter by Account Number */}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Filter by Account Number
+                </label>
+                <input
+                  type="text"
+                  value={filterByAccountNumber}
+                  onChange={(e) => setFilterByAccountNumber(e.target.value)}
+                  placeholder="Search by account..."
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Clear Filters Button */}
+          {(filterByAdminId || filterByEmail || filterByAccountNumber) && (
+            <div className="mt-3">
+              <button
+                onClick={() => {
+                  setFilterByAdminId('');
+                  setFilterByEmail('');
+                  setFilterByAccountNumber('');
+                }}
+                className="px-4 py-1.5 text-xs font-medium text-slate-600 hover:text-red-600 border border-slate-300 hover:border-red-300 rounded-lg transition-colors"
+              >
+                Clear All Filters
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}

@@ -166,7 +166,21 @@ const Navbar: React.FC = () => {
     setActiveNestedDropdown(null);
     setUserMenuOpen(false);
 
-    // Trigger client-side signout immediately, call API in background
+    // Clear all auth cookies immediately (before async logout)
+    if (typeof document !== 'undefined') {
+      document.cookie = 'is_authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'apex_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    }
+
+    // Clear localStorage immediately
+    try {
+      localStorage.removeItem('apex-auth');
+    } catch (e) {
+      // ignore
+    }
+
+    // Trigger client-side signout in background
     try {
       logout().catch((err) => {
         if (process.env.NODE_ENV !== 'production') {
@@ -179,11 +193,9 @@ const Navbar: React.FC = () => {
       }
     }
 
-    // Finish UI transition and navigate away immediately
-    requestAnimationFrame(() => {
-      stopLoading();
-      router.replace('/');
-    });
+    // Use hard navigation for clean state reset (same as Dashboard Navbar)
+    stopLoading();
+    window.location.href = '/';
   };
 
   const toggleUserMenu = () => {
@@ -373,9 +385,9 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Search and Auth */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center">
             {/* Search (Desktop) */}
-            <div ref={searchRef} className="relative hidden md:block">
+            <div ref={searchRef} className="relative hidden md:block mr-2">
               {searchOpen ? (
                 <div className="absolute right-0 top-0 mt-1 z-50 w-64">
                     <input
@@ -404,26 +416,40 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* Auth Buttons (Desktop) */}
-            <div className="hidden md:flex items-center space-x-2">
+            <div className="hidden md:flex items-center gap-1">
               {(isLoading || !hasHydrated) ? (
                 // Loading state indicator (shown while fetching user OR during Zustand rehydration)
                 <div className={`rounded-full h-6 w-6 border-2 border-t-transparent animate-spin ${
                   isScrolled ? 'border-gray-300' : 'border-white'
                 }`}></div>
               ) : isLoggedIn ? (
-                <div className="relative" ref={userMenuRef}>
+                <>
+                  {/* Notification Bell Icon */}
                   <button
-                    onClick={toggleUserMenu}
-                    className={`px-4 py-2 text-xs font-medium rounded-md flex items-center ${
-                      isScrolled ? 'text-gray-900 hover:bg-gray-100' : 'text-white hover:bg-white/10'
+                    className={`p-2 rounded-md transition-colors ${
+                      isScrolled ? 'text-gray-600 hover:bg-gray-100' : 'text-white hover:bg-white/10'
                     }`}
+                    title="Notifications"
                   >
-                    <FiUser className="mr-2 h-4 w-4" />
-                    {user?.firstName || 'User'} {user?.lastName || ''}
-                    <FiChevronDown className={`ml-1 h-3 w-3 transition-transform ${
-                      userMenuOpen ? 'rotate-180' : ''
-                    }`} />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
                   </button>
+
+                  {/* Profile Dropdown */}
+                  <div className="relative" ref={userMenuRef}>
+                    <button
+                      onClick={toggleUserMenu}
+                      className={`px-3 py-2 text-xs font-medium rounded-md flex items-center ${
+                        isScrolled ? 'text-gray-900 hover:bg-gray-100' : 'text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <FiUser className="mr-2 h-4 w-4" />
+                      {user?.firstName || 'User'} {user?.lastName || ''}
+                      <FiChevronDown className={`ml-1 h-3 w-3 transition-transform ${
+                        userMenuOpen ? 'rotate-180' : ''
+                      }`} />
+                    </button>
                   
                     {userMenuOpen && (
                     <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-50 py-1">
@@ -459,6 +485,7 @@ const Navbar: React.FC = () => {
                     </div>
                   )}
                 </div>
+                </>
               ) : (
                 <>
                   <Link 

@@ -145,6 +145,9 @@ export default function SignUp() {
     setSuccessMessage('');
 
     try {
+      // Start loading overlay BEFORE API call
+      startLoading('Creating your account...');
+
       await api.post('/auth/signup', {
         ...formData,
         dateOfBirth: formData.dateOfBirth?.toISOString().split('T')[0],
@@ -157,7 +160,7 @@ export default function SignUp() {
       const role = response?.user?.role ?? useAuthStore.getState().user?.role;
       const redirectPath = getRoleBasedRedirect(role);
       
-      // Start loading overlay
+      // Update loading message
       startLoading('Setting up your account...');
       
       // CRITICAL: Wait for Zustand persist to write token to localStorage
@@ -183,9 +186,10 @@ export default function SignUp() {
         console.warn('[SignUp] Token not in storage yet, waiting longer...');
         await new Promise(resolve => setTimeout(resolve, 200));
       }
-      
-      // Use hard navigation to ensure clean slate
-      window.location.href = redirectPath;
+
+      // Use soft router navigation to allow skeleton to render
+      // The redirect will happen but skeleton will be visible during loading
+      router.push(redirectPath);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'An error occurred');
     } finally {

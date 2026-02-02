@@ -95,10 +95,15 @@ export const useAuthStore = create<AuthStore>()(
           // Set a transient logging-out flag
           set({ isLoggingOut: true });
 
-          // Clear client-side cookie
+          // Clear ALL client-side cookies (including ones that useAuthRedirect checks)
           if (typeof document !== 'undefined') {
             document.cookie = 'is_authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            document.cookie = 'apex_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
           }
+
+          // Clear axios default Authorization header immediately
+          delete api.defaults.headers.common['Authorization'];
 
           // Immediately clear client state and persisted storage for snappy UX
           set({

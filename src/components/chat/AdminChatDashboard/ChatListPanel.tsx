@@ -25,8 +25,8 @@ interface ChatListPanelProps {
   chats: ChatListItem[];
   selectedChatId?: string;
   onSelectChat: (chatId: string) => void;
-  filter: 'all' | 'open' | 'locked' | 'closed' | 'unread';
-  onFilterChange: (filter: 'all' | 'open' | 'locked' | 'closed' | 'unread') => void;
+  filter: 'all' | 'open' | 'locked' | 'closed' | 'unread' | 'me';
+  onFilterChange: (filter: 'all' | 'open' | 'locked' | 'closed' | 'unread' | 'me') => void;
   loading?: boolean;
   onDelete?: (chatId: string) => void;
   canDelete?: boolean;
@@ -98,10 +98,11 @@ export function ChatListPanel({
   });
 
   // Define available filters based on role
-  const filterOptions: { key: 'all' | 'open' | 'locked' | 'closed' | 'unread'; label: string }[] = 
+  const filterOptions: { key: 'all' | 'open' | 'locked' | 'closed' | 'unread' | 'me'; label: string }[] = 
     role === 'SYSTEM_ADMIN' 
       ? [
           { key: 'all', label: 'All' },
+          { key: 'me', label: 'Me' },
           { key: 'unread', label: 'Unread' },
           { key: 'open', label: 'Open' },
           { key: 'locked', label: 'Locked' },
@@ -109,6 +110,7 @@ export function ChatListPanel({
         ]
       : [
           { key: 'all', label: 'All' },
+          { key: 'me', label: 'Me' },
           { key: 'unread', label: 'Unread' },
           { key: 'open', label: 'Open' },
           { key: 'locked', label: 'My Chats' },

@@ -70,6 +70,7 @@ export default function CountrySelect({
       options={options}
       placeholder={placeholder}
       disabled={disabled || loading}
+      dropUp={true}
     />
   );
 }
