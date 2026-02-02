@@ -26,11 +26,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         const pathname = window.location.pathname;
         const isProtectedRoute = pathname.startsWith('/dashboard') || 
                                  pathname.startsWith('/admin') ||
+                                 pathname.startsWith('/system-admin') ||
                                  pathname.startsWith('/profile') ||
                                  pathname.startsWith('/settings');
         
         if (isProtectedRoute) {
-          router.replace('/');
+          router.replace('/signin');
         }
       }
       return;

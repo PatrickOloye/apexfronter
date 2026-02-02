@@ -436,55 +436,7 @@ const Navbar: React.FC = () => {
                     </svg>
                   </button>
 
-                  {/* Profile Dropdown */}
-                  <div className="relative" ref={userMenuRef}>
-                    <button
-                      onClick={toggleUserMenu}
-                      className={`px-3 py-2 text-xs font-medium rounded-md flex items-center ${
-                        isScrolled ? 'text-gray-900 hover:bg-gray-100' : 'text-white hover:bg-white/10'
-                      }`}
-                    >
-                      <FiUser className="mr-2 h-4 w-4" />
-                      {user?.firstName || 'User'} {user?.lastName || ''}
-                      <FiChevronDown className={`ml-1 h-3 w-3 transition-transform ${
-                        userMenuOpen ? 'rotate-180' : ''
-                      }`} />
-                    </button>
-                  
-                    {userMenuOpen && (
-                    <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-50 py-1">
-                      <AppLink 
-                        href={dashboardRoute} 
-                        onClick={() => {
-                          console.log('[Landing Navbar] Desktop user menu Dashboard clicked', { href: dashboardRoute, time: new Date().toISOString() });
-                          setUserMenuOpen(false);
-                        }}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Dashboard
-                      </AppLink>
-                  
-                      <div className="border-t border-gray-100 my-1"></div>
-                      <button
-                        onClick={handleLogout}
-                        disabled={isLoggingOut}
-                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isLoggingOut ? (
-                          <span className="flex items-center">
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Signing Out...
-                          </span>
-                        ) : (
-                          'Sign Out'
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
+                  {/* Desktop: No dropdown needed - use mobile avatar for consistency */}
                 </>
               ) : (
                 <>

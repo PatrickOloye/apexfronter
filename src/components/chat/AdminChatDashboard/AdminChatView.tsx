@@ -183,7 +183,8 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
         senderType: 'ADMIN',
         content,
         sequence: (selectedChat.messages?.length || 0) + 1,
-        createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      idempotencyKey
     };
     
     setSelectedChat(prev => prev ? { ...prev, messages: [...(prev.messages||[]), optimistic] } : prev);
@@ -293,12 +294,12 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
           if (prev.messages?.some(m => m.id === message.id)) return prev;
           
           // Dedupe by idempotencyKey (for optimistic updates)
-          if (message.idempotencyKey && prev.messages?.some(m => m.idempotencyKey === message.idempotencyKey)) {
+          if (message.idempotencyKey && prev.messages?.some(m => m.idempotencyKey === message.idempotencyKey || m.id === message.idempotencyKey)) {
             // Replace optimistic message with confirmed one
             return {
               ...prev,
               messages: prev.messages.map(m => 
-                m.idempotencyKey === message.idempotencyKey ? message : m
+                (m.idempotencyKey === message.idempotencyKey || m.id === message.idempotencyKey) ? message : m
               ).sort((a, b) => (a.sequence || 0) - (b.sequence || 0)),
             };
           }
@@ -310,7 +311,7 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
         });
       }
 
-      // Update List
+      // Update List - only update lastMessageAt and unreadCount, don't duplicate messages
        setChats(prev => {
         const idx = prev.findIndex(c => c.id === message.chatId);
         
@@ -321,9 +322,9 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
             return prev; 
         }
         
+        // Only update metadata, NOT messages (they're already updated in selectedChat above)
         const updated = {
             ...prev[idx],
-            messages: (selectedChat?.id === message.chatId) ? [...(prev[idx].messages || []), message] : prev[idx].messages,
             lastMessageAt: message.createdAt,
             unreadCount: (selectedChat?.id === message.chatId) ? 0 : (prev[idx].unreadCount || 0) + 1
         };

@@ -13,6 +13,14 @@ export function useAuthRedirect() {
     useEffect(() => {
         // 1. Regular Check
         const checkAuth = () => {
+            // Only run on auth pages (signin, signup, forgot-password)
+            if (typeof window !== 'undefined') {
+                const pathname = window.location.pathname;
+                const isAuthPage = pathname === '/signin' || pathname === '/signup' || pathname.startsWith('/forgot-password');
+                
+                if (!isAuthPage) return; // Don't redirect if not on auth page
+            }
+            
             // Check store state OR client-side cookie
             const hasCookie = typeof document !== 'undefined' && (
                 document.cookie.includes('apex_token=') || document.cookie.includes('refresh_token=')

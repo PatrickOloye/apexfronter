@@ -86,13 +86,13 @@ const Typewriter = ({ texts, speed = 50 }: { texts: string[]; speed?: number }) 
 
   return (
     <span className="inline-block min-h-[2.5rem]">
-      <span className="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent font-bold text-xl md:text-2xl lg:text-3xl">
+      <span className="bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-500 bg-clip-text text-transparent font-bold text-xl md:text-2xl lg:text-3xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
         {displayedText}
       </span>
       <motion.span 
         animate={{ opacity: [1, 0] }}
         transition={{ duration: 0.5, repeat: Infinity }}
-        className="text-amber-400 ml-1"
+        className="text-yellow-300 ml-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
       >
         |
       </motion.span>
