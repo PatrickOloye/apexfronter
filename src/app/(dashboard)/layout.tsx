@@ -33,7 +33,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
-    if (window.innerWidth < 768 && isSidebarOpen) {
+    if (window.innerWidth < 1024 && isSidebarOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'hidden';
@@ -45,7 +45,7 @@ export default function DashboardLayout({
 
   return (
     <AuthGuard>
-    <div className="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-slate-50">
+    <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden bg-slate-50">
       {/* MOBILE OVERLAY & DRAWER */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -54,7 +54,7 @@ export default function DashboardLayout({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9998] md:hidden"
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9998] lg:hidden"
               onClick={() => setIsSidebarOpen(false)}
             />
             
@@ -63,7 +63,7 @@ export default function DashboardLayout({
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed inset-y-0 left-0 w-[280px] bg-slate-900 shadow-2xl z-[9999] md:hidden border-r border-slate-800 flex flex-col"
+              className="fixed inset-y-0 left-0 w-[280px] bg-slate-900 shadow-2xl z-[9999] lg:hidden border-r border-slate-800 flex flex-col"
             >
               {/* Drawer Header */}
               <div className="flex items-center justify-between p-6 border-b border-slate-800/50">
@@ -101,7 +101,7 @@ export default function DashboardLayout({
       </AnimatePresence>
 
       {/* DESKTOP SIDEBAR */}
-      <div className="hidden md:flex flex-col fixed md:static inset-y-0 left-0 z-50 w-64 md:w-[8%] lg:w-[16%] xl:w-[14%] bg-gradient-to-b from-slate-800 via-slate-800 to-slate-900 shadow-xl h-full">
+      <div className="hidden lg:flex flex-col fixed lg:static inset-y-0 left-0 z-50 w-64 lg:w-[16%] xl:w-[14%] bg-gradient-to-b from-slate-800 via-slate-800 to-slate-900 shadow-xl h-full">
         {/* Logo */}
         <div className="flex-shrink-0 p-4 border-b border-slate-700/50 flex items-center justify-between">
           <AppLink
@@ -118,7 +118,7 @@ export default function DashboardLayout({
       </div>
       
       {/* RIGHT CONTENT AREA */}
-      <div ref={contentRef} className={`flex-1 w-full md:w-[92%] lg:w-[84%] xl:w-[86%] bg-slate-50 ${isChatPage ? 'overflow-hidden' : 'overflow-auto no-scrollbar'} overscroll-none flex flex-col`}>
+      <div ref={contentRef} className={`flex-1 w-full lg:w-[84%] xl:w-[86%] bg-slate-50 ${isChatPage ? 'overflow-hidden' : 'overflow-auto no-scrollbar'} overscroll-none flex flex-col`}>
         <Navbar 
           isScrolled={isScrolled} 
           onMenuClick={() => setIsSidebarOpen(true)}

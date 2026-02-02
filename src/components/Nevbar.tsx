@@ -304,18 +304,18 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
     }`}>
       {/* LEFT SIDE: HAMBURGER & SEARCH */}
       <div className="flex items-center gap-3">
-        {/* Hamburger Menu (Mobile Only) */}
+        {/* Hamburger Menu (Mobile & Tablet) */}
         <button 
           onClick={onMenuClick}
-          className="md:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          className="lg:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
 
-        {/* SEARCH BAR (Hidden on mobile usually, or we can keep it if space permits. Sticking to hidden md:flex) */}
-        <div className='hidden md:flex items-center gap-2 text-sm rounded-lg bg-white/70 px-3 py-1.5 border border-slate-200 shadow-sm'>
+        {/* SEARCH BAR (Hidden on mobile/tablet, shown on desktop) */}
+        <div className='hidden lg:flex items-center gap-2 text-sm rounded-lg bg-white/70 px-3 py-1.5 border border-slate-200 shadow-sm'>
           <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -349,7 +349,7 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
 
             {/* Notification Dropdown */}
             {isNotificationOpen && (
-              <div className="fixed inset-x-4 top-[65px] md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 md:w-80 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden z-50">
+              <div className="fixed inset-x-4 top-[65px] lg:absolute lg:inset-auto lg:right-0 lg:top-full lg:mt-2 lg:w-80 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden z-50">
                 {/* ... existing notification list ... */} 
                 {/* To save tokens I won't copy the whole inner content if I can help it, but replace is block-based. */}
                 {/* I will assume the inner content is same, but I need to include it for the replace tool. */}
@@ -451,7 +451,7 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
               <div className={`w-8 h-8 rounded-lg ${getRoleColor()} flex items-center justify-center text-white font-semibold text-xs shadow-lg`}>
                 {getInitials()}
               </div>
-              <div className='hidden md:flex flex-col items-start'>
+              <div className='hidden lg:flex flex-col items-start'>
                 <span className="text-xs font-medium text-slate-700 leading-tight">
                   {user.firstName} {user.lastName}
                 </span>
@@ -533,7 +533,7 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
           // This prevents the "Sign In / Open Account" flash on iOS/Safari
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-slate-200 animate-pulse" />
-            <div className="hidden md:flex flex-col items-start gap-1">
+            <div className="hidden lg:flex flex-col items-start gap-1">
               <div className="w-20 h-3 rounded bg-slate-200 animate-pulse" />
               <div className="w-12 h-3 rounded bg-slate-200 animate-pulse" />
             </div>
