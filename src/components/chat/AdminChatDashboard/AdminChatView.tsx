@@ -39,6 +39,9 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
   const [selectedChat, setSelectedChat] = useState<ChatSession | null>(null);
   const [stats, setStats] = useState<ChatStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [filter, setFilter] = useState<'all' | 'open' | 'locked' | 'closed' | 'unread' | 'me'>('all');
   const [manualOffline, setManualOffline] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -81,8 +84,11 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
   const initialChatId = searchParams?.get('chatId');
 
   // Actions
-  const loadChats = React.useCallback(async () => {
+  const loadChats = React.useCallback(async (pageNum: number = 1, append: boolean = false) => {
     try {
+      if (!append) setLoading(true);
+      else setLoadingMore(true);
+
       const statusMap: Record<string, string | undefined> = {
         all: undefined, open: 'OPEN', locked: 'LOCKED', closed: 'CLOSED', me: undefined
       };
@@ -91,6 +97,8 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
       const queryParams: any = {
         status: isAdmin ? undefined : statusMap[filter],
         available: isAdmin ? true : undefined,
+        page: pageNum,
+        limit: 20, // Load 20 chats per page
       };
 
       // Add advanced filters (SYSTEM_ADMIN only)
@@ -124,13 +132,34 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
 
       // Enforce sort by last message
       loadedChats.sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
-      setChats(loadedChats);
+      
+      if (append) {
+        setChats(prev => {
+          // Deduplicate by ID when appending
+          const existingIds = new Set(prev.map(c => c.id));
+          const newChats = loadedChats.filter(c => !existingIds.has(c.id));
+          return [...prev, ...newChats];
+        });
+      } else {
+        setChats(loadedChats);
+      }
+      
+      // Check if there are more chats to load
+      setHasMore(loadedChats.length >= 20);
     } catch (e) {
         console.error(e);
     } finally {
         setLoading(false);
+        setLoadingMore(false);
     }
   }, [filter, role, user?.id, filterByAdminId, filterByEmail, filterByAccountNumber]);
+
+  const loadMoreChats = React.useCallback(() => {
+    if (loadingMore || !hasMore) return;
+    const nextPage = page + 1;
+    setPage(nextPage);
+    loadChats(nextPage, true);
+  }, [loadingMore, hasMore, page, loadChats]);
 
   const loadStats = async () => {
     try {
@@ -244,9 +273,10 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
   }, [role]);
 
   // Load Data
-  // Load Data
   useEffect(() => {
-    loadChats();
+    setPage(1);
+    setHasMore(true);
+    loadChats(1, false);
     loadStats();
   }, [filter, loadChats]);
 
@@ -255,7 +285,9 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
     if (!isConnected) return;
 
     const unsubNew = on('chat:new', (data: any) => {
-      loadChats();
+      setPage(1);
+      setHasMore(true);
+      loadChats(1, false);
       loadStats();
       // Notify admin of new chat
       toast.info("New Support Chat Initiated", {
@@ -268,8 +300,7 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
       });
     });
 
-    const unsubUpdate = on('chat:list:update', () => {
-      loadChats();
+    const unsubUpdate = on('chat:list:update', () => {\n      setPage(1);\n      setHasMore(true);\n      loadChats(1, false);
     });
 
     const unsubLock = on('chat:lock:update', (data: any) => {
@@ -503,6 +534,9 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
                 filter={filter as any}
                 onFilterChange={(f) => setFilter(f)}
                 loading={loading}
+                loadingMore={loadingMore}
+                hasMore={hasMore}
+                onLoadMore={loadMoreChats}
                 canDelete={role === 'SYSTEM_ADMIN'}
                 onDelete={(id) => setChatToDelete(chats.find(c => c.id === id) || null)}
                 role={role}

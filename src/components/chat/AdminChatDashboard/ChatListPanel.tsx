@@ -28,6 +28,9 @@ interface ChatListPanelProps {
   filter: 'all' | 'open' | 'locked' | 'closed' | 'unread' | 'me';
   onFilterChange: (filter: 'all' | 'open' | 'locked' | 'closed' | 'unread' | 'me') => void;
   loading?: boolean;
+  loadingMore?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
   onDelete?: (chatId: string) => void;
   canDelete?: boolean;
   role?: 'ADMIN' | 'SYSTEM_ADMIN';
@@ -40,11 +43,34 @@ export function ChatListPanel({
   filter,
   onFilterChange,
   loading,
+  loadingMore = false,
+  hasMore = false,
+  onLoadMore,
   onDelete,
   canDelete = false,
   role = 'ADMIN',
 }: ChatListPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const listRef = React.useRef<HTMLDivElement>(null);
+
+  // Infinite scroll handler
+  React.useEffect(() => {
+    const listElement = listRef.current;
+    if (!listElement || !onLoadMore) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = listElement;
+      const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
+      
+      // Load more when user scrolls to 80% of the list
+      if (scrollPercentage > 0.8 && hasMore && !loadingMore && !loading) {
+        onLoadMore();
+      }
+    };
+
+    listElement.addEventListener('scroll', handleScroll);
+    return () => listElement.removeEventListener('scroll', handleScroll);
+  }, [onLoadMore, hasMore, loadingMore, loading]);
 
   const formatTime = (date: string) => {
     const d = new Date(date);
@@ -154,7 +180,7 @@ export function ChatListPanel({
       </div>
 
       {/* Chat List */}
-      <div className={styles.list}>
+      <div ref={listRef} className={styles.list}>
         {loading ? (
           <div className={styles.loading}>
             <div className={styles.loadingSpinner}></div>
@@ -166,7 +192,8 @@ export function ChatListPanel({
             <span>No conversations found</span>
           </div>
         ) : (
-          filteredChats.map((chat) => (
+          <>
+            {filteredChats.map((chat) => (
             <div
               key={chat.id}
               className={`${styles.chatItem} ${selectedChatId === chat.id ? styles.selected : ''}`}
@@ -217,7 +244,23 @@ export function ChatListPanel({
                 </button>
               )}
             </div>
-          ))
+          ))}
+          
+          {/* Loading More Indicator */}
+          {loadingMore && (
+            <div className={styles.loadingMore}>
+              <div className={styles.loadingSpinner}></div>
+              <span>Loading more...</span>
+            </div>
+          )}
+          
+          {/* No More Chats Indicator */}
+          {!hasMore && filteredChats.length > 0 && (
+            <div className={styles.noMore}>
+              <span>No more conversations</span>
+            </div>
+          )}
+          </>
         )}
       </div>
     </div>
