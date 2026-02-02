@@ -9,9 +9,11 @@ export function middleware(request: NextRequest) {
     // Note: The specific cookie name depends on your auth implementation.
     // Based on auth.service.ts, it sets 'apex_token' and 'refresh_token'.
     const token = request.cookies.get('apex_token')?.value || request.cookies.get('refresh_token')?.value;
+    const isAuthenticatedFlag = request.cookies.get('is_authenticated')?.value;
 
-    // Only rely on server-issued cookies for auth
-    const isAuthenticated = !!token;
+    // Allow either server-issued tokens or the frontend auth flag
+    // Frontend runs on a different domain, so backend cookies aren't visible here.
+    const isAuthenticated = !!token || isAuthenticatedFlag === 'true';
 
     // Define routes that should be inaccessible when logged in
     const authRoutes = ['/signin', '/signup', '/forgot-password'];
