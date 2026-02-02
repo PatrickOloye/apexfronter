@@ -39,18 +39,22 @@ export default function SignIn() {
     
     try {
       const response = await login(formData.email, formData.password);
+      
+      // Show success immediately
+      toast.success('Successfully signed in!');
+      
+      // Start loading overlay
+      startLoading('Redirecting to your dashboard...');
+      
+      // Get redirect path
       const role = response?.user?.role ?? useAuthStore.getState().user?.role;
       const redirectPath = getRoleBasedRedirect(role);
       
-      // Start loading overlay BEFORE toast so user sees smooth transition
-      startLoading('Redirecting to your dashboard...');
-      toast.success('Successfully signed in!');
-      
       // CRITICAL: Wait for Zustand persist to write token to localStorage
-      // The persist middleware is async - we must wait before navigating
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // This is especially important for iOS Safari which has slower localStorage
+      await new Promise(resolve => setTimeout(resolve, 400));
       
-      // Verify token is actually in localStorage before navigating
+      // Verify token is persisted (important for iOS Safari)
       const verifyStorage = (): boolean => {
         try {
           const stored = localStorage.getItem('apex-auth');
@@ -64,13 +68,31 @@ export default function SignIn() {
         return false;
       };
       
-      // If still not written, wait a bit more (handles slow iOS devices)
-      if (!verifyStorage()) {
-        console.warn('[SignIn] Token not in storage yet, waiting longer...');
-        await new Promise(resolve => setTimeout(resolve, 200));
+      // Wait up to 1 second for storage to persist on slow devices
+      let attempts = 0;
+      while (!verifyStorage() && attempts < 5) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
       }
       
-      // Use hard navigation to ensure clean slate and avoid Next.js router race
+      if (!verifyStorage()) {
+        console.error('[SignIn] Token failed to persist to localStorage after 5 attempts');
+        // Fallback: try to set manually
+        try {
+          const currentState = useAuthStore.getState();
+          if (currentState.token) {
+            localStorage.setItem('apex-auth', JSON.stringify({
+              state: { token: currentState.token, user: currentState.user },
+              version: 0
+            }));
+          }
+        } catch (e) {
+          console.error('[SignIn] Manual storage set failed:', e);
+        }
+      }
+      
+      // Use hard navigation for better iOS Safari compatibility
+      // This ensures cookies and storage are properly accessible
       window.location.href = redirectPath;
     } catch (error) {
       console.error('Signin error:', error);

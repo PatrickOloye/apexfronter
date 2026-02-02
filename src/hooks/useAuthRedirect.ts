@@ -9,6 +9,7 @@ import { useAuthStore, getRoleBasedRedirect } from '../store/AuthStore';
 export function useAuthRedirect() {
     const router = useRouter();
     const user = useAuthStore((state) => state.user);
+    const token = useAuthStore((state) => state.token);
 
     useEffect(() => {
         // 1. Regular Check
@@ -25,12 +26,27 @@ export function useAuthRedirect() {
             const hasCookie = typeof document !== 'undefined' && (
                 document.cookie.includes('apex_token=') || document.cookie.includes('refresh_token=')
             );
-            const isAuth = !!user || hasCookie;
+            
+            // Check localStorage for token (more reliable on iOS Safari)
+            let hasStoredToken = false;
+            try {
+                const stored = typeof window !== 'undefined' ? localStorage.getItem('apex-auth') : null;
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    hasStoredToken = !!parsed?.state?.token;
+                }
+            } catch (e) {
+                // ignore
+            }
+            
+            const isAuth = !!user || !!token || hasCookie || hasStoredToken;
 
             if (isAuth) {
                 const role = user?.role ?? useAuthStore.getState().user?.role;
                 const redirectPath = getRoleBasedRedirect(role);
-                router.replace(redirectPath);
+                
+                // Use hard navigation for better compatibility with iOS Safari
+                window.location.href = redirectPath;
             }
         };
 
@@ -48,5 +64,5 @@ export function useAuthRedirect() {
         return () => {
             window.removeEventListener('pageshow', handlePageShow);
         };
-    }, [user, router]);
+    }, [user, token, router]);
 }
