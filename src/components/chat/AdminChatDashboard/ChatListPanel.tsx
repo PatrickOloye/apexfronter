@@ -128,7 +128,6 @@ export function ChatListPanel({
     role === 'SYSTEM_ADMIN' 
       ? [
           { key: 'all', label: 'All' },
-          { key: 'me', label: 'Me' },
           { key: 'unread', label: 'Unread' },
           { key: 'open', label: 'Open' },
           { key: 'locked', label: 'Locked' },
@@ -136,7 +135,6 @@ export function ChatListPanel({
         ]
       : [
           { key: 'all', label: 'All' },
-          { key: 'me', label: 'Me' },
           { key: 'unread', label: 'Unread' },
           { key: 'open', label: 'Open' },
           { key: 'locked', label: 'My Chats' },

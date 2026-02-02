@@ -300,7 +300,10 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
       });
     });
 
-    const unsubUpdate = on('chat:list:update', () => {\n      setPage(1);\n      setHasMore(true);\n      loadChats(1, false);
+    const unsubUpdate = on('chat:list:update', () => {
+      setPage(1);
+      setHasMore(true);
+      loadChats(1, false);
     });
 
     const unsubLock = on('chat:lock:update', (data: any) => {
