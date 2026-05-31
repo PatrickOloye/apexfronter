@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { ChatWidget } from './ChatWidget';
 
 export function UserChatWidget() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.currentUser);
   const pathname = usePathname();
 
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SYSTEM_ADMIN';

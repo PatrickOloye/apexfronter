@@ -117,7 +117,7 @@ const ActivityItem = ({ log }: { log: AuditLog }) => {
 };
 
 export default function SystemAdminDashboard() {
-  const user = useAuthStore((state) => state.user);
+  const user = useAuthStore((state) => state.currentUser);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -129,24 +129,12 @@ export default function SystemAdminDashboard() {
   const fetchDashboardStats = async () => {
     try {
       setLoading(true);
+      setError(null);
       const { data } = await api.get('/admin/dashboard/stats');
       setStats(data?.data || data);
     } catch (err) {
-      console.error('Error fetching stats:', err);
       setError('Unable to load dashboard data. Please check your connection.');
-      // Set mock data for development
-      setStats({
-        totalUsers: 1245,
-        totalAdmins: 3,
-        systemAdminCount: { current: 2, max: 2, canCreateMore: false },
-        pendingTransactions: 47,
-        activeLoans: 89,
-        recentActivity: [
-          { id: '1', userEmail: 'admin@apex.com', action: 'CREATE', resource: 'User', createdAt: new Date().toISOString() },
-          { id: '2', userEmail: 'admin@apex.com', action: 'UPDATE', resource: 'Transaction', createdAt: new Date().toISOString() },
-          { id: '3', userEmail: 'system@apex.com', action: 'LOGIN', resource: 'Auth', createdAt: new Date().toISOString() },
-        ],
-      });
+      setStats(null);
     } finally {
       setLoading(false);
     }
@@ -241,12 +229,8 @@ export default function SystemAdminDashboard() {
             <QuickAction 
               title="Generate Report" 
               icon="📈" 
-              onClick={() => {
-                // Future implementation
-                console.log('Report generation triggered');
-              }}
               variant="secondary"
-              disabled={true} // Disabled for now until implemented
+              disabled={true}
             />
           </div>
 

@@ -17,7 +17,7 @@ interface ActionButtonsProps {
 
 export const ActionButtons = ({ transaction, onView, onEdit, onDelete }: ActionButtonsProps) => {
 
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.currentUser);
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'USER';
 
   return (

@@ -31,10 +31,8 @@ const TransactionTypeModal: React.FC<TransactionTypeModalProps> = ({ isOpen, onC
     onClose();
   };
 
-  // Handle dummy submission for the modal within the type selection
-  const handleDummySubmit = async (formData: any) => {
-    console.log('Transaction data:', formData);
-    setSelectedType(null);
+  const handleUnavailableSubmit = async () => {
+    throw new Error('Transaction creation is unavailable from this entry point.');
   };
 
   const transactionTypes = [
@@ -96,7 +94,6 @@ const TransactionTypeModal: React.FC<TransactionTypeModalProps> = ({ isOpen, onC
         </div>
       </div>
 
-      {/* Fixed: Added the required onSubmit prop */}
       {selectedType && (
         <CreateTransactionModal
           isOpen={!!selectedType}
@@ -104,7 +101,7 @@ const TransactionTypeModal: React.FC<TransactionTypeModalProps> = ({ isOpen, onC
           transactionType={selectedType.transactionType}
           transactionForm={selectedType.form}
           transactionLabel={selectedType.label}
-          onSubmit={handleDummySubmit}
+          onSubmit={handleUnavailableSubmit}
         />
       )}
     </>

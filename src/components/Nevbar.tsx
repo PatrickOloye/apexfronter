@@ -3,11 +3,10 @@ import { useState, useRef, useEffect } from "react"
 import { useAuthStore, getRoleBasePath, normalizeRole } from "../store/AuthStore"
 import { useRouter } from "next/navigation"
 import AppLink from "./AppLink"
-import { useLoading } from "./LoadingProvider"
 import { api } from "../libs/http/api"
 import { NotificationsAPI, AdminNotification } from "../libs/server-actions/notifications"
 import { useNotificationsSocket } from "@/hooks/useNotificationsSocket"
-import { useHasHydrated } from "./HydrationGate"
+import { UserProfileDropdown } from "./UserProfileDropdown"
 
 type NotificationItem = {
   id: string;
@@ -21,34 +20,19 @@ type NotificationItem = {
 };
 
 const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onMenuClick?: () => void }) => {
-  const user = useAuthStore((state) => state.user)
-  const logout = useAuthStore((state) => state.logout)
-  const isLoggingOut = useAuthStore((state) => state.isLoggingOut)
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const user = useAuthStore((state) => state.currentUser)
+  const isInitializing = useAuthStore((state) => state.isInitializing)
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [remoteUnreadCount, setRemoteUnreadCount] = useState<number | null>(null)
   const { on: onNotifications } = useNotificationsSocket()
-  const dropdownRef = useRef<HTMLDivElement>(null)
   const notificationRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const { startLoading } = useLoading()
   
-  // Track hydration state to prevent showing wrong UI during Zustand rehydration
-  const hasHydrated = useHasHydrated()
-
   const dashboardRoute = getRoleBasePath(user?.role)
   const unreadCount = remoteUnreadCount ?? notifications.filter(n => !n.read).length
 
   useEffect(() => {
-    // Load read notifications from localStorage or defaulting
-    const loadReadState = () => {
-       try {
-           const stored = localStorage.getItem('apex_read_notifications');
-           return stored ? JSON.parse(stored) : [];
-       } catch { return []; }
-    }
-
     const fetchNotifications = async () => {
       if (!user?.id) {
         setNotifications([])
@@ -81,15 +65,13 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
 
         const { data } = await api.get('/transactions/user-transactions')
         const transactions = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
-        const readIds = loadReadState();
-
         setNotifications(
           transactions.slice(0, 5).map((tx: any) => ({
             id: tx.id,
             title: `${tx.type} ${tx.status}`,
             message: `${tx.currency || 'USD'} ${Number(tx.amount).toFixed(2)} • ${tx.description || 'Transaction update'}`,
             time: new Date(tx.createdAt).toLocaleString(),
-            read: readIds.includes(tx.id),
+            read: false,
             type: tx.status === 'FAILED' ? 'warning' : tx.type === 'CREDIT' ? 'success' : 'info',
           }))
         )
@@ -147,15 +129,13 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
         // Also refresh transactions list as a notification
         api.get('/transactions/user-transactions').then(({ data }) => {
              const transactions = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
-             const loadReadState = () => { try { return JSON.parse(localStorage.getItem('apex_read_notifications') || '[]'); } catch { return []; } }
-             const readIds = loadReadState();
              setNotifications(
                 transactions.slice(0, 5).map((tx: any) => ({
                     id: tx.id,
                     title: `${tx.type} ${tx.status}`,
                     message: `${tx.currency || 'USD'} ${Number(tx.amount).toFixed(2)} • ${tx.description || 'Transaction update'}`,
                     time: new Date(tx.createdAt).toLocaleString(),
-                    read: readIds.includes(tx.id),
+                    read: false,
                     type: tx.status === 'FAILED' ? 'warning' : tx.type === 'CREDIT' ? 'success' : 'info',
                 }))
              )
@@ -167,47 +147,15 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
     }
   }, [user?.id, user?.role, onNotifications])
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false)
-      }
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setIsNotificationOpen(false)
       }
     }
-    // Use 'click' instead of 'mousedown' so element click handlers run first
     document.addEventListener('click', handleClickOutside)
     return () => document.removeEventListener('click', handleClickOutside)
   }, [])
-
-  const handleLogout = () => {
-    startLoading('Signing out...')
-    setIsDropdownOpen(false)
-
-    // Trigger immediate client-side signout; call API in background
-    try {
-      logout().catch((err) => {
-        if (process.env.NODE_ENV !== 'production') {
-          console.error('Logout API error (background):', err);
-        }
-      });
-    } catch (err) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('Logout invocation failed:', err);
-      }
-    }
-
-    // Force cleanup and hard redirect immediately
-    try {
-      localStorage.removeItem('apex-auth');
-      localStorage.removeItem('apex-storage'); // Just in case
-    } catch (e) {
-      // ignore
-    }
-    window.location.href = '/';
-  }
 
   const markAsRead = async (id: string) => {
     const role = normalizeRole(user?.role)
@@ -216,14 +164,6 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
         await NotificationsAPI.markRead(id)
         const { count } = await NotificationsAPI.unreadCount()
         setRemoteUnreadCount(typeof count === 'number' ? count : 0)
-      } else {
-          // User: Save to localStorage
-          const stored = localStorage.getItem('apex_read_notifications');
-          const readIds = stored ? JSON.parse(stored) : [];
-          if (!readIds.includes(id)) {
-              readIds.push(id);
-              localStorage.setItem('apex_read_notifications', JSON.stringify(readIds));
-          }
       }
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
     } catch (error) {
@@ -240,16 +180,6 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
         await NotificationsAPI.markAllRead()
         const { count } = await NotificationsAPI.unreadCount()
         setRemoteUnreadCount(typeof count === 'number' ? count : 0)
-      } else {
-          // User: Mark all current notifications as read
-          const stored = localStorage.getItem('apex_read_notifications');
-          const readIds = stored ? JSON.parse(stored) : [];
-          notifications.forEach(n => {
-              if (!readIds.includes(n.id)) {
-                  readIds.push(n.id);
-              }
-          });
-          localStorage.setItem('apex_read_notifications', JSON.stringify(readIds));
       }
       setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     } catch (error) {
@@ -264,31 +194,6 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
     await NotificationsAPI.approveChatDeletion(notification.metadata.approvalId)
     await markAsRead(notification.id)
   }
-
-  const getInitials = () => {
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-    }
-    return 'U'
-  }
-
-  const getRoleColor = () => {
-    switch (user?.role) {
-      case 'SYSTEM_ADMIN': return 'bg-gradient-to-br from-purple-600 to-indigo-600'
-      case 'ADMIN': return 'bg-gradient-to-br from-blue-600 to-cyan-600'
-      default: return 'bg-gradient-to-br from-emerald-500 to-teal-500'
-    }
-  }
-
-  const getRoleBadge = () => {
-    switch (user?.role) {
-      case 'SYSTEM_ADMIN': return { text: 'System Admin', color: 'bg-purple-100 text-purple-700' }
-      case 'ADMIN': return { text: 'Admin', color: 'bg-blue-100 text-blue-700' }
-      default: return { text: 'User', color: 'bg-emerald-100 text-emerald-700' }
-    }
-  }
-
-  const roleBadge = getRoleBadge()
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -443,94 +348,8 @@ const Navbar = ({ isScrolled = false, onMenuClick }: { isScrolled?: boolean; onM
 
         {/* User Avatar Dropdown OR Sign In */}
         {user ? (
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-all duration-200 ${isDropdownOpen ? 'bg-slate-100' : ''}`}
-            >
-              <div className={`w-8 h-8 rounded-lg ${getRoleColor()} flex items-center justify-center text-white font-semibold text-xs shadow-lg`}>
-                {getInitials()}
-              </div>
-              <div className='hidden lg:flex flex-col items-start'>
-                <span className="text-xs font-medium text-slate-700 leading-tight">
-                  {user.firstName} {user.lastName}
-                </span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${roleBadge.color} font-medium leading-tight`}>
-                  {roleBadge.text}
-                </span>
-              </div>
-              <svg className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {/* User Dropdown Menu */}
-            {isDropdownOpen && (
-              <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-xl shadow-2xl border border-slate-100 py-1 z-50">
-                {/* User Info */}
-                <div className="px-4 py-3 border-b border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg ${getRoleColor()} flex items-center justify-center text-white font-bold shadow-md`}>
-                      {getInitials()}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-slate-800 text-sm truncate">{user.firstName} {user.lastName}</p>
-                      <p className="text-xs text-slate-500 truncate">{user.email}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Menu Items */}
-                <div className="py-1">
-                  <AppLink href="/" onClick={() => { console.log('[Nevbar] Home clicked from dropdown', { time: new Date().toISOString() }); setIsDropdownOpen(false); }} className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    Home
-                  </AppLink>
-                  <AppLink href={dashboardRoute} onClick={() => { console.log('[Nevbar] Dashboard clicked from dropdown', { href: dashboardRoute, time: new Date().toISOString() }); setIsDropdownOpen(false); }} className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    Dashboard
-                  </AppLink>
-                  <AppLink href={`${dashboardRoute}/profile`} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                     <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                     </svg>
-                     Profile
-                  </AppLink>
-                  <AppLink href={`${dashboardRoute}/settings`} onClick={() => setIsDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Settings
-                  </AppLink>
-                </div>
-
-                {/* Logout */}
-                <div className="py-1 border-t border-slate-100">
-                  <button onClick={handleLogout} disabled={isLoggingOut} className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50">
-                    {isLoggingOut ? (
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                    ) : (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
-                    )}
-                    {isLoggingOut ? 'Logging out...' : 'Logout'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : !hasHydrated ? (
-          // Show loading skeleton while Zustand is rehydrating from localStorage
-          // This prevents the "Sign In / Open Account" flash on iOS/Safari
+          <UserProfileDropdown showDetails tone="light" />
+        ) : isInitializing ? (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-slate-200 animate-pulse" />
             <div className="hidden lg:flex flex-col items-start gap-1">

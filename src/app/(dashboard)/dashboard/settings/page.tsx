@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useAuthStore } from '../../../../store/AuthStore';
 
 const SettingsPage = () => {
-  const user = useAuthStore(state => state.user);
+  const user = useAuthStore(state => state.currentUser);
   
   return (
     <div className="min-h-full">

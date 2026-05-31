@@ -26,7 +26,9 @@ const SustainabilityCard: React.FC<SustainabilityCardProps> = ({ title, descript
       <Button
         text="Watch Now"
         icon={MdPlayCircleFilled}
-        onClick={() => console.log("Button clicked!")}
+        onClick={() => {
+          window.location.href = link;
+        }}
       >
         <span className="text-lg">→</span> Learn more
       </Button>

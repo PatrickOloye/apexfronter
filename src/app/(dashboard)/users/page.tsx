@@ -7,7 +7,9 @@ import Link from "next/link";
 import { useAuthStore } from "../../../store/AuthStore";
 
 function UsersContent() {
-  const { user, fetchCurrentUser, isLoading } = useAuthStore();
+  const user = useAuthStore((state) => state.currentUser);
+  const fetchCurrentUser = useAuthStore((state) => state.fetchCurrentUser);
+  const isLoading = useAuthStore((state) => state.isLoading);
   
   
   useEffect(() => {

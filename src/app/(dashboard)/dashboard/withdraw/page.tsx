@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export default function WithdrawalPage() {
-  const user = useAuthStore((state) => state.user);
+  const user = useAuthStore((state) => state.currentUser);
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

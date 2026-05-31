@@ -36,7 +36,7 @@ interface PermissionGateProps {
  * </PermissionGate>
  */
 export function PermissionGate({ permission, roles, children, fallback = null }: PermissionGateProps) {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.currentUser);
   
   // If no user, don't render
   if (!user) {
@@ -58,15 +58,11 @@ export function PermissionGate({ permission, roles, children, fallback = null }:
   }
 
   // Check permission requirement
-  // Note: In a full implementation, this would check the user's permissions array
-  // For now, we'll allow all if user is ADMIN and check frontend-side
   if (permission) {
-    // TODO: Connect to user.permissions when backend is fully wired
-    // For now, ADMIN users pass through (permissions checked at API level)
-    if (userRole === 'ADMIN') {
+    const permissions = Array.isArray(user.permissions) ? user.permissions : [];
+    if (permissions.includes(permission)) {
       return <>{children}</>;
     }
-    // Regular users don't have admin permissions
     return <>{fallback}</>;
   }
 
@@ -77,7 +73,7 @@ export function PermissionGate({ permission, roles, children, fallback = null }:
  * Hook for checking if current user has a specific permission
  */
 export function useHasPermission(permission: string): boolean {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.currentUser);
   
   if (!user) return false;
   
@@ -86,9 +82,8 @@ export function useHasPermission(permission: string): boolean {
   // SYSTEM_ADMIN has all permissions
   if (userRole === 'SYSTEM_ADMIN') return true;
   
-  // TODO: Check against user.permissions array
-  // For now, admin users have permissions (checked at API level)
-  if (userRole === 'ADMIN') return true;
+  const permissions = Array.isArray(user.permissions) ? user.permissions : [];
+  if (permissions.includes(permission)) return true;
   
   return false;
 }
@@ -97,7 +92,7 @@ export function useHasPermission(permission: string): boolean {
  * Hook for checking if current user has one of the specified roles
  */
 export function useHasRole(...roles: ('SYSTEM_ADMIN' | 'ADMIN' | 'USER')[]): boolean {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.currentUser);
   
   if (!user) return false;
   

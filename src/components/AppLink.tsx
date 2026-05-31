@@ -4,7 +4,6 @@ import Link, { LinkProps } from 'next/link';
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLoading } from './LoadingProvider';
-import { useAuthStore } from '@/store/AuthStore';
 
 type AppLinkProps = LinkProps & React.AnchorHTMLAttributes<HTMLAnchorElement> & {
   loadingMessage?: string;
@@ -16,14 +15,6 @@ const AppLink = ({ onClick, loadingMessage, href, ...props }: AppLinkProps) => {
   const { startLoading } = useLoading();
 
   const handleClick = (event: any) => {
-    // Log initial click context
-    try {
-      const mem = useAuthStore.getState();
-      // console.log('[AppLink] click', { href, pathname, tokenPresent: !!mem?.token, time: new Date().toISOString() });
-    } catch (e) {
-      // console.log('[AppLink] click - failed to read store', { href, pathname });
-    }
-
     // Prevent default anchor navigation immediately so state changes in onClick
     // (for example, closing a dropdown) cannot interrupt SPA navigation.
     try {
@@ -44,10 +35,7 @@ const AppLink = ({ onClick, loadingMessage, href, ...props }: AppLinkProps) => {
 
       // Navigate first, then call the caller onClick which may unmount this link
       try {
-        // console.log('[AppLink] router.push start', { href, time: new Date().toISOString() });
-        // router.push returns a promise - await it to capture completion
         Promise.resolve(router.push(href as any)).then(() => {
-          // console.log('[AppLink] router.push finished', { href, time: new Date().toISOString() });
         }).catch((err) => {
           console.error('[AppLink] router.push error', err);
         });
@@ -57,7 +45,6 @@ const AppLink = ({ onClick, loadingMessage, href, ...props }: AppLinkProps) => {
       }
 
       try {
-        // console.log('[AppLink] calling caller onClick', { href, time: new Date().toISOString() });
         onClick?.(event);
       } catch (e) {
         // ignore caller errors

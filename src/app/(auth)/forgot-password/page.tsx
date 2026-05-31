@@ -5,8 +5,10 @@ import { motion } from 'framer-motion';
 import { useLoading } from '../../../components/LoadingProvider';
 import { BrandMark } from '../../../components/BrandMark';
 import { AuthService } from '../../../libs/server-actions/auth';
+import { useAuthRedirect } from '../../../hooks/useAuthRedirect';
 
 export default function ForgotPassword() {
+  useAuthRedirect();
   const [email, setEmail] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');

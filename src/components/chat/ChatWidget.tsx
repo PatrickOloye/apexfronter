@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ChatMessage } from '@/types/chat';
 import styles from './ChatWidget.module.css';
 import { useAuthStore } from '@/store/AuthStore';
+import { mergeChatMessages } from '@/libs/chat/messageMerge';
 
 interface ChatWidgetProps {
   position?: 'bottom-right' | 'bottom-left';
@@ -16,6 +17,7 @@ export function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [userInfo, setUserInfo] = useState<{ name?: string; email?: string }>({});
   const [showInfoForm, setShowInfoForm] = useState(true);
   const [isClosed, setIsClosed] = useState(false);
@@ -25,7 +27,8 @@ export function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { user } = useAuthStore();
+  const joinedKeyRef = useRef<string | null>(null);
+  const user = useAuthStore((state) => state.currentUser);
 
   const {
     isConnected,
@@ -90,36 +93,11 @@ export function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
     if (!isConnected) return;
 
     const unsubMessage = on('chat:message', (message: ChatMessage) => {
-      setMessages(prev => {
-        // If message has idempotency key, check if we have an optimistic version
-        if (message.idempotencyKey) {
-          const optimisticIndex = prev.findIndex(m => m.id === message.idempotencyKey);
-          if (optimisticIndex !== -1) {
-            // Replace optimistic message with real one
-            const newMessages = [...prev];
-            newMessages[optimisticIndex] = message;
-            return newMessages.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
-          }
-        }
-        
-        // Avoid duplicates by checking ID
-        if (prev.some(m => m.id === message.id)) {
-          return prev;
-        }
-        return [...prev, message].sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
-      });
+      setMessages(prev => mergeChatMessages(prev, message));
     });
 
     const unsubBatch = on('chat:messages:batch', (messagesBatch: ChatMessage[]) => {
-      setMessages(prev => {
-        const merged = [...prev];
-        for (const msg of messagesBatch) {
-          if (!merged.some(m => m.id === msg.id)) {
-            merged.push(msg);
-          }
-        }
-        return merged.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
-      });
+      setMessages(prev => mergeChatMessages(prev, messagesBatch));
     });
 
     const unsubClosed = on('chat:closed', () => {
@@ -130,6 +108,7 @@ export function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
         sessionStorage.removeItem('chat-session-id');
         sessionStorage.removeItem('chat-draft');
       }
+      joinedKeyRef.current = null;
     });
 
     const unsubTyping = on('chat:typing', (payload: { chatId: string; senderType: string; isTyping: boolean }) => {
@@ -157,6 +136,9 @@ export function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
 
 
   const handleJoinChat = useCallback(async () => {
+    const joinKey = `${sessionId || ''}:${userInfo.email || ''}:${userInfo.name || ''}`;
+    if (joinedKeyRef.current === joinKey && chatId) return;
+
     setIsLoading(true);
     setIsClosed(false);
     try {
@@ -166,16 +148,18 @@ export function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
       });
       
       if (response.messages) {
-        setMessages(response.messages);
+        setMessages(prev => mergeChatMessages(prev, response.messages || []));
+      }
+      if (response.success) {
+        joinedKeyRef.current = joinKey;
       }
       if (response.error) {
-        console.error('Join error:', response.error);
         toast.error(response.error || "Failed to join chat");
       }
     } finally {
       setIsLoading(false);
     }
-  }, [joinChat, userInfo.email, userInfo.name]);
+  }, [chatId, joinChat, sessionId, userInfo.email, userInfo.name]);
 
   // Join chat when connected and not showing form (sync state)
   useEffect(() => {
@@ -194,7 +178,6 @@ export function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
     }
     setInfoError(null);
     
-    // Save to localStorage
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('chat-user-info', JSON.stringify(userInfo));
     }
@@ -205,72 +188,62 @@ export function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!inputValue.trim() || isClosed || !isConnected) return;
+    if (!inputValue.trim() || isClosed || !isConnected || isSending) return;
 
     const content = inputValue.trim();
     const idempotencyKey = crypto.randomUUID();
+    setIsSending(true);
 
-    // Optimistic update
     const optimisticMessage: ChatMessage = {
       id: idempotencyKey,
+      idempotencyKey,
       chatId: chatId || '',
       senderType: 'USER',
       content,
       sequence: messages.length + 1,
       createdAt: new Date().toISOString(),
     };
-    setMessages(prev => [...prev, optimisticMessage]);
+    setMessages(prev => mergeChatMessages(prev, optimisticMessage));
     setInputValue('');
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('chat-draft', '');
     }
 
-    const response = await sendUserMessage(content, idempotencyKey);
-    sendTyping(false);
-    
-    if (response.error) {
-      // Handle CHAT_CLOSED error code specifically
-      if ((response as any).code === 'CHAT_CLOSED' || 
-          (typeof response.error === 'string' && response.error.toLowerCase().includes('closed'))) {
-        setIsClosed(true);
-        setMessages(prev => prev.filter(m => m.id !== idempotencyKey)); // Remove optimistic
-        if (typeof window !== 'undefined') {
-          sessionStorage.removeItem('chat-session-id');
-        }
-        toast.info('This chat has been closed. Please start a new conversation.');
-        return;
-      }
+    try {
+      const response = await sendUserMessage(content, idempotencyKey);
+      sendTyping(false);
       
-      // Auto-recover if session not found (e.g. deleted by admin)
-      if (typeof response.error === 'string' && response.error.toLowerCase().includes('not found')) {
-          console.log('Session not found, creating new session...');
+      if (response.error) {
+        if ((response as any).code === 'CHAT_CLOSED' || 
+            (typeof response.error === 'string' && response.error.toLowerCase().includes('closed'))) {
+          setIsClosed(true);
+          setMessages(prev => prev.filter(m => m.id !== idempotencyKey));
+          joinedKeyRef.current = null;
           if (typeof window !== 'undefined') {
-             sessionStorage.removeItem('chat-session-id');
+            sessionStorage.removeItem('chat-session-id');
           }
-          
-          // Attempt to rejoin/create new chat
-          const joinRes = await joinChat({
-             userEmail: userInfo.email,
-             userName: userInfo.name,
-          });
+          toast.info('This chat has been closed. Please start a new conversation.');
+          return;
+        }
 
-          if (!joinRes.error) {
-              // Retry sending the message
-              const retryRes = await sendUserMessage(content, idempotencyKey);
-              if (!retryRes.error) {
-                  return; // Successfully recovered and sent
-              }
+        if (typeof response.error === 'string' && response.error.toLowerCase().includes('not found')) {
+          joinedKeyRef.current = null;
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('chat-session-id');
           }
-      }
+          toast.error('Chat session expired. Please try again.');
+        } else {
+          toast.error(response.error || 'Failed to send message');
+        }
 
-      // Remove optimistic message on error if recovery failed
-      setMessages(prev => prev.filter(m => m.id !== idempotencyKey));
-      setInputValue(content);
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('chat-draft', content);
+        setMessages(prev => prev.filter(m => m.id !== idempotencyKey));
+        setInputValue(content);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('chat-draft', content);
+        }
       }
-      console.error('Send error:', response.error);
-      toast.error("Failed to send message");
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -303,9 +276,7 @@ export function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
       sessionStorage.removeItem('chat-session-id');
       sessionStorage.removeItem('chat-draft');
     }
-    // If we have user info (logged in), we might want to auto-join or show form.
-    // Showing form is safer to let them confirm topic e.g. if we add topic later.
-    // For now, simple reset to form.
+    joinedKeyRef.current = null;
     setShowInfoForm(true);
   };
 
@@ -446,7 +417,7 @@ export function ChatWidget({ position = 'bottom-right' }: ChatWidgetProps) {
                     />
                     <button 
                       type="submit" 
-                      disabled={!inputValue.trim() || !isConnected || isClosed}
+                      disabled={!inputValue.trim() || !isConnected || isClosed || isSending}
                       className={styles.sendBtn}
                       aria-label="Send message"
                     >

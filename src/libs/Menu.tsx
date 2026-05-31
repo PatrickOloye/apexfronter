@@ -86,7 +86,7 @@ interface MenuSection {
 }
 
 const Menu = () => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.currentUser);
   const pathname = usePathname();
 
   // Get user role from auth store, default to 'user' if not authenticated

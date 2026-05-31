@@ -1,9 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuthStore, getRoleBasedRedirect } from '../../../store/AuthStore';
 import { useAuthRedirect } from '../../../hooks/useAuthRedirect';
 import { api } from '../../../libs/http/api';
 import DatePicker from 'react-datepicker';
@@ -40,9 +39,6 @@ interface FormData {
 
 export default function SignUp() {
   const router = useRouter();
-  const login = useAuthStore((state) => state.login);
-  const user = useAuthStore((state) => state.user);
-
   // Use persistent redirect hook to handle Back button / fast navigation
   useAuthRedirect();
   const [currentStep, setCurrentStep] = useState(1);
@@ -149,47 +145,15 @@ export default function SignUp() {
       startLoading('Creating your account...');
 
       await api.post('/auth/signup', {
-        ...formData,
-        dateOfBirth: formData.dateOfBirth?.toISOString().split('T')[0],
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
       });
 
-      setSuccessMessage('Account created successfully!');
-      
-      // Auto-login after signup
-      const response = await login(formData.email, formData.password);
-      const role = response?.user?.role ?? useAuthStore.getState().user?.role;
-      const redirectPath = getRoleBasedRedirect(role);
-      
-      // Update loading message
-      startLoading('Setting up your account...');
-      
-      // CRITICAL: Wait for Zustand persist to write token to localStorage
-      // The persist middleware is async - we must wait before navigating
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Verify token is actually in localStorage before navigating
-      const verifyStorage = (): boolean => {
-        try {
-          const stored = localStorage.getItem('apex-auth');
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            return !!parsed?.state?.token;
-          }
-        } catch (e) {
-          console.warn('[SignUp] Storage verification failed:', e);
-        }
-        return false;
-      };
-      
-      // If still not written, wait a bit more (handles slow iOS devices)
-      if (!verifyStorage()) {
-        console.warn('[SignUp] Token not in storage yet, waiting longer...');
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
+      setSuccessMessage('Account created successfully. Verify your email before signing in.');
 
-      // Use soft router navigation to allow skeleton to render
-      // The redirect will happen but skeleton will be visible during loading
-      router.push(redirectPath);
+      router.push('/signin');
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'An error occurred');
     } finally {

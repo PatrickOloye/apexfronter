@@ -73,8 +73,6 @@ export default function NewsletterSubscription() {
     setToastType('success');
     setShowToast(true);
     setEmail('');
-    
-    console.log('Subscribed email:', email);
   };
   
   useEffect(() => {

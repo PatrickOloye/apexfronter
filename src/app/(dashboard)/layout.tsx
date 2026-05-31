@@ -126,10 +126,10 @@ export default function DashboardLayout({
         <div className={`flex-1 relative ${isChatPage ? 'p-0 overflow-hidden flex flex-col' : 'px-4 md:px-6 pt-4 pb-24 md:pb-4'}`}>
           {isChatPage ? (
              <div className="h-full w-full">
-               <AuthGuard>{children}</AuthGuard>
+               {children}
              </div>
           ) : (
-            <AuthGuard>{children}</AuthGuard>
+            children
           )}
         </div>
       </div>

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SigninFormData } from '@/libs/server-actions/types';
@@ -15,7 +15,6 @@ import { toast } from 'sonner';
 export default function SignIn() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
-  const user = useAuthStore((state) => state.user);
   
   // Use persistent redirect hook to handle Back button / fast navigation
   useAuthRedirect();
@@ -38,7 +37,7 @@ export default function SignIn() {
     e.preventDefault();
     
     try {
-      const response = await login(formData.email, formData.password);
+      const currentUser = await login(formData.email, formData.password);
       
       // Show success immediately
       toast.success('Successfully signed in!');
@@ -47,55 +46,11 @@ export default function SignIn() {
       startLoading('Redirecting to your dashboard...');
       
       // Get redirect path
-      const role = response?.user?.role ?? useAuthStore.getState().user?.role;
+      const role = currentUser?.role;
       const redirectPath = getRoleBasedRedirect(role);
       
-      // CRITICAL: Wait for Zustand persist to write token to localStorage
-      // This is especially important for iOS Safari which has slower localStorage
-      await new Promise(resolve => setTimeout(resolve, 400));
-      
-      // Verify token is persisted (important for iOS Safari)
-      const verifyStorage = (): boolean => {
-        try {
-          const stored = localStorage.getItem('apex-auth');
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            return !!parsed?.state?.token;
-          }
-        } catch (e) {
-          console.warn('[SignIn] Storage verification failed:', e);
-        }
-        return false;
-      };
-      
-      // Wait up to 1 second for storage to persist on slow devices
-      let attempts = 0;
-      while (!verifyStorage() && attempts < 5) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        attempts++;
-      }
-      
-      if (!verifyStorage()) {
-        console.error('[SignIn] Token failed to persist to localStorage after 5 attempts');
-        // Fallback: try to set manually
-        try {
-          const currentState = useAuthStore.getState();
-          if (currentState.token) {
-            localStorage.setItem('apex-auth', JSON.stringify({
-              state: { token: currentState.token, user: currentState.user },
-              version: 0
-            }));
-          }
-        } catch (e) {
-          console.error('[SignIn] Manual storage set failed:', e);
-        }
-      }
-      
-      // Use hard navigation for better iOS Safari compatibility
-      // This ensures cookies and storage are properly accessible
       window.location.href = redirectPath;
     } catch (error) {
-      console.error('Signin error:', error);
       const msg = error instanceof Error ? error.message : 'An error occurred during sign in';
       toast.error(msg);
     }
@@ -199,7 +154,7 @@ export default function SignIn() {
                   onChange={handleChange}
                   required
                   disabled={isLoading}
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                   className="peer w-full px-4 py-4 pr-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder-transparent focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 focus:outline-none transition-all duration-300 disabled:opacity-50"
                   placeholder="Password"
                 />

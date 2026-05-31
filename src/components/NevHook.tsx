@@ -2,7 +2,10 @@ import { useAuthStore } from "@/store/AuthStore";
 import { useEffect, useState } from "react";
 
 export const useAuth = () => {
-  const { user, isLoading, fetchCurrentUser, error } = useAuthStore();
+  const user = useAuthStore((state) => state.currentUser);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const fetchCurrentUser = useAuthStore((state) => state.fetchCurrentUser);
+  const error = useAuthStore((state) => state.error);
   const [hasAttempted, setHasAttempted] = useState(false);
 
   useEffect(() => {

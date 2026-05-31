@@ -70,7 +70,6 @@ export interface Session {
     email: string;
     role?: string;
   };
-  token: string;
 }
 
 // Form state for auth operations
@@ -79,7 +78,6 @@ export interface FormState {
   message?: string;
   success?: boolean;
   user?: User | null;
-  token?: string | null;
 }
 
 // Auth form data types

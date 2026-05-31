@@ -29,7 +29,9 @@ const BankingCard: React.FC<BankingCardProps> = ({ content }) => {
       <Button
        text="Watch Now"
        icon={MdPlayCircleFilled}
-       onClick={() => console.log("Button clicked!")}
+       onClick={() => {
+        window.location.href = content.link;
+       }}
       >
         Read more
       </Button>

@@ -14,6 +14,7 @@ import { ChatListPanel } from './ChatListPanel';
 import { ChatWorkspace } from './ChatWorkspace';
 import { ChatHeader } from './ChatHeader';
 import { UserContextPanel } from './UserContextPanel';
+import { mergeChatMessages } from '@/libs/chat/messageMerge';
 import { 
   CreditCard,
   Shield,
@@ -31,7 +32,7 @@ interface AdminChatViewProps {
 }
 
 export default function AdminChatView({ role }: AdminChatViewProps) {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.currentUser);
   const router = useRouter();
   
   // State
@@ -63,6 +64,7 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<ChatSession | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const sendingKeysRef = useRef<Set<string>>(new Set());
 
   // Socket Hook
   const {
@@ -204,8 +206,9 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
   const handleSendMessage = async (content: string) => {
     if (!selectedChat) return;
     const idempotencyKey = crypto.randomUUID();
+    if (sendingKeysRef.current.has(idempotencyKey)) return;
+    sendingKeysRef.current.add(idempotencyKey);
     
-    // Optimistic update
     const optimistic: ChatMessage = {
         id: idempotencyKey,
         chatId: selectedChat.id,
@@ -216,11 +219,19 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
       idempotencyKey
     };
     
-    setSelectedChat(prev => prev ? { ...prev, messages: [...(prev.messages||[]), optimistic] } : prev);
+    setSelectedChat(prev => prev ? { ...prev, messages: mergeChatMessages(prev.messages || [], optimistic) } : prev);
 
-    const res = await sendAdminMessage(content, idempotencyKey);
-    if (res.error) {
-        toast.error(res.error);
+    try {
+      const res = await sendAdminMessage(content, idempotencyKey);
+      if (res.error) {
+          setSelectedChat(prev => prev ? {
+            ...prev,
+            messages: (prev.messages || []).filter(m => m.id !== idempotencyKey),
+          } : prev);
+          toast.error(res.error);
+      }
+    } finally {
+      sendingKeysRef.current.delete(idempotencyKey);
     }
   };
 
@@ -318,56 +329,43 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
       }
     });
 
-    const unsubMessage = on('chat:message', (message: ChatMessage) => {
-      // Update selected chat with deduplication
-      if (selectedChat && message.chatId === selectedChat.id) {
+    const handleIncomingMessages = (incoming: ChatMessage | ChatMessage[]) => {
+      const messages = Array.isArray(incoming) ? incoming : [incoming];
+
+      if (selectedChat) {
+        const selectedMessages = messages.filter(message => message.chatId === selectedChat.id);
+        if (selectedMessages.length > 0) {
         setSelectedChat(prev => {
           if (!prev) return prev;
-          
-          // Dedupe by message ID
-          if (prev.messages?.some(m => m.id === message.id)) return prev;
-          
-          // Dedupe by idempotencyKey (for optimistic updates)
-          if (message.idempotencyKey && prev.messages?.some(m => m.idempotencyKey === message.idempotencyKey || m.id === message.idempotencyKey)) {
-            // Replace optimistic message with confirmed one
-            return {
-              ...prev,
-              messages: prev.messages.map(m => 
-                (m.idempotencyKey === message.idempotencyKey || m.id === message.idempotencyKey) ? message : m
-              ).sort((a, b) => (a.sequence || 0) - (b.sequence || 0)),
-            };
-          }
-          
           return {
             ...prev,
-            messages: [...(prev.messages || []), message].sort((a, b) => (a.sequence || 0) - (b.sequence || 0)),
+            messages: mergeChatMessages(prev.messages || [], selectedMessages),
           };
         });
       }
+      }
 
-      // Update List - only update lastMessageAt and unreadCount, don't duplicate messages
-       setChats(prev => {
-        const idx = prev.findIndex(c => c.id === message.chatId);
+      setChats(prev => {
+        let next = [...prev];
+        for (const message of messages) {
+          const idx = next.findIndex(c => c.id === message.chatId);
         
-        if (idx === -1) {
-            // New chat that wasn't in list? Wait for chat:list:update or fetch it?
-            // Usually chat:new handles the full reload. 
-            // But if we want real-time ordering for hidden/new chats, we might need to fetch it.
-            return prev; 
-        }
+          if (idx === -1) continue;
         
-        // Only update metadata, NOT messages (they're already updated in selectedChat above)
-        const updated = {
-            ...prev[idx],
+          const updated = {
+            ...next[idx],
             lastMessageAt: message.createdAt,
-            unreadCount: (selectedChat?.id === message.chatId) ? 0 : (prev[idx].unreadCount || 0) + 1
-        };
-        const newList = [...prev];
-        newList.splice(idx, 1);
-        newList.unshift(updated);
-        return newList;
+            unreadCount: selectedChat?.id === message.chatId ? 0 : (next[idx].unreadCount || 0) + 1
+          };
+          next.splice(idx, 1);
+          next.unshift(updated);
+        }
+        return next;
       });
-    });
+    };
+
+    const unsubMessage = on('chat:message', handleIncomingMessages);
+    const unsubBatch = on('chat:messages:batch', handleIncomingMessages);
 
     const unsubClosed = on('chat:closed', (data: any) => {
          if (selectedChat?.id === data.chatId) {
@@ -394,6 +392,7 @@ export default function AdminChatView({ role }: AdminChatViewProps) {
         unsubUpdate();
         unsubLock();
         unsubMessage();
+        unsubBatch();
         unsubClosed();
         unsubTakeover();
     };

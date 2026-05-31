@@ -19,8 +19,8 @@ import {
 import { TransactionForm, TransactionType } from '@/libs/server-actions/types';
 import { BrandMark } from '@/components/BrandMark';
 import { BRAND } from '@/config/brand';
+import { toast } from 'sonner';
 
-// Define props interface for the component
 interface CreateTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -144,18 +144,17 @@ const CreateTransactionModal = ({
     
     setIsLoading(true);
     try {
-      // Extract numeric value without commas for submission
       const submissionData = {
         ...formData,
         amount: formData.amount.replace(/,/g, '')
       };
       
       await onSubmit(submissionData);
-      alert('Transaction submitted successfully!');
-    } catch (error) {
-      console.error('Error submitting transaction:', error);
-    } finally {
+      toast.success('Transaction submitted successfully');
       onClose(); 
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Transaction submission failed');
+    } finally {
       setIsLoading(false);
     }
   };

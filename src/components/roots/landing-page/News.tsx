@@ -55,9 +55,9 @@ const PlayIcon = () => (
     width="16"
     height="16"
     viewBox="0 0 24 24"
-    fill="white"
+    fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
-    className="absolute"
+    className="shrink-0"
   >
     <path d="M8 5v14l11-7z" />
   </svg>
@@ -70,6 +70,7 @@ const AudioIcon = () => (
     viewBox="0 0 24 24"
     fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
+    className="shrink-0"
   >
     <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
   </svg>
@@ -80,10 +81,10 @@ export default function FinancialInsights() {
   const sideInsights = insights.filter(item => !item.featured);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="mx-auto w-full max-w-7xl overflow-hidden px-4 py-8">
       <div className="mb-6">
         <h5 className="text-sm font-medium text-blue-600">OUR INSIGHTS</h5>
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">Financial Market Trends and Economic Analysis</h1>
+        <h1 className="mb-2 break-words text-4xl font-bold text-gray-800">Financial Market Trends and Economic Analysis</h1>
         <Link href="/" className="text-sm text-blue-600 underline hover:no-underline">
           View All Insights
         </Link>
@@ -93,7 +94,7 @@ export default function FinancialInsights() {
       <div className="grid md:grid-cols-2 gap-8">
         {/* Featured insight - left side */}
         {featuredInsight && (
-          <div className="flex flex-col">
+          <div className="flex min-w-0 flex-col">
             <div className="relative h-64 w-full mb-4">
               <Image
                 src="/landing-page/coin1.jpg"
@@ -106,12 +107,12 @@ export default function FinancialInsights() {
             </div>
             <div className="mt-2">
               <div className="text-sm font-medium text-gray-600">{featuredInsight.category}</div>
-              <h2 className="text-2xl font-bold mt-1 mb-2">{featuredInsight.title}</h2>
-              <div className="flex items-center text-sm text-gray-600">
+              <h2 className="mt-1 mb-2 break-words text-2xl font-bold">{featuredInsight.title}</h2>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-600">
                 {featuredInsight.contentType === 'Podcast' ? <AudioIcon /> : 
                  featuredInsight.contentType === 'Video' ? <PlayIcon /> : null}
-                <span className="ml-1">{featuredInsight.contentType}</span>
-                <span className="mx-2">|</span>
+                <span>{featuredInsight.contentType}</span>
+                <span>|</span>
                 <span>{featuredInsight.date}</span>
               </div>
             </div>
@@ -121,8 +122,8 @@ export default function FinancialInsights() {
         {/* Right side insights */}
         <div className="flex flex-col space-y-6">
           {sideInsights.map((insight) => (
-            <div key={insight.id} className="flex items-start">
-              <div className="relative h-24 w-32 flex-shrink-0 mr-4">
+            <div key={insight.id} className="flex min-w-0 items-start gap-4">
+              <div className="relative h-24 w-32 flex-shrink-0">
                 <Image
                   // src={insight.imageUrl}
                   src="/landing-page/coin1.jpg"
@@ -133,7 +134,7 @@ export default function FinancialInsights() {
                 />
                 {insight.contentType === 'Video' && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-8 h-8 bg-black bg-opacity-60 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-black bg-opacity-60 rounded-full flex items-center justify-center text-white">
                       <PlayIcon />
                     </div>
                     {insight.duration && (
@@ -144,14 +145,14 @@ export default function FinancialInsights() {
                   </div>
                 )}
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="text-sm font-medium text-gray-600">{insight.category}</div>
-                <h3 className="font-bold mb-1">{insight.title}</h3>
-                <div className="flex items-center text-sm text-gray-600">
+                <h3 className="mb-1 break-words font-bold">{insight.title}</h3>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-600">
                   {insight.contentType === 'Podcast' ? <AudioIcon /> : 
                    insight.contentType === 'Video' ? <PlayIcon /> : null}
-                  <span className="ml-1">{insight.contentType}</span>
-                  <span className="mx-2">|</span>
+                  <span>{insight.contentType}</span>
+                  <span>|</span>
                   <span>{insight.date}</span>
                 </div>
               </div>

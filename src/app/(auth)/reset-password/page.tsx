@@ -6,8 +6,10 @@ import { motion } from 'framer-motion';
 import { useLoading } from '../../../components/LoadingProvider';
 import { BrandMark } from '../../../components/BrandMark';
 import { AuthService } from '../../../libs/server-actions/auth';
+import { useAuthRedirect } from '../../../hooks/useAuthRedirect';
 
 export default function ResetPassword() {
+  useAuthRedirect();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 const Dashboard = () => {
-  const user = useAuthStore(state => state.user);
+  const user = useAuthStore(state => state.currentUser);
   const fetchCurrentUser = useAuthStore(state => state.fetchCurrentUser);
   const isLoading = useAuthStore(state => state.isLoading);
   

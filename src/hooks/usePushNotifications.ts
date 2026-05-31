@@ -60,7 +60,7 @@ export function usePushNotifications() {
             });
 
             // Send to backend
-            // Assuming headers handle Auth token automatically via interceptors or cookie
+            // Auth is carried by the backend HttpOnly session cookie.
             const base = (BACKEND_URL || 'http://localhost:3000').replace(/\/$/, '');
             await axios.post(`${base}/notifications/subscribe`, subscription);
 

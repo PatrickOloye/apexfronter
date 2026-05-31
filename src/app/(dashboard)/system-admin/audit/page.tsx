@@ -43,12 +43,13 @@ const ACTION_COLORS: Record<string, { bg: string; text: string }> = {
 };
 
 export default function AuditLogs() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.currentUser);
   const isSystemAdmin = user?.role === 'SYSTEM_ADMIN';
   
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [loading, setLoading] = useState(true);
+  const [logsError, setLogsError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     action: '',
     resource: '',
@@ -70,7 +71,6 @@ export default function AuditLogs() {
       const result = await api.get('/chat/db-stats');
       setDbStats(result.data);
     } catch (err) {
-      console.error('Error fetching DB stats:', err);
       toast.error('Failed to fetch database stats');
     } finally {
       setDbStatsLoading(false);
@@ -89,7 +89,6 @@ export default function AuditLogs() {
       toast.success(`Cleanup complete: ${result.data.deletedSessions} sessions, ${result.data.deletedMessages} messages deleted`);
       fetchDbStats(); // Refresh stats
     } catch (err) {
-      console.error('Error running cleanup:', err);
       toast.error('Failed to run cleanup');
     } finally {
       setCleanupLoading(false);
@@ -107,6 +106,7 @@ export default function AuditLogs() {
     const fetchLogs = async () => {
       try {
         setLoading(true);
+        setLogsError(null);
         const params = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString(),
@@ -120,16 +120,9 @@ export default function AuditLogs() {
         setLogs(result.data?.data?.data || result.data?.data || []);
         setPagination(prev => ({ ...prev, ...result.data?.data?.pagination, ...(result.data?.pagination || {}) }));
       } catch (err) {
-        console.error('Error fetching logs:', err);
-        // Mock data for development
-        setLogs([
-          { id: '1', userId: '1', userEmail: 'admin@apex.com', userRole: 'ADMIN', action: 'CREATE', resource: 'User', createdAt: new Date().toISOString(), details: '{"email":"newuser@test.com"}' },
-          { id: '2', userId: '1', userEmail: 'admin@apex.com', userRole: 'ADMIN', action: 'UPDATE', resource: 'Transaction', resourceId: 'txn-123', createdAt: new Date(Date.now() - 3600000).toISOString() },
-          { id: '3', userId: '2', userEmail: 'superadmin@apex.com', userRole: 'SYSTEM_ADMIN', action: 'LOGIN', resource: 'Auth', createdAt: new Date(Date.now() - 7200000).toISOString() },
-          { id: '4', userId: '1', userEmail: 'admin@apex.com', userRole: 'ADMIN', action: 'DELETE', resource: 'User', resourceId: 'usr-456', createdAt: new Date(Date.now() - 86400000).toISOString() },
-          { id: '5', userId: '2', userEmail: 'superadmin@apex.com', userRole: 'SYSTEM_ADMIN', action: 'DEACTIVATE', resource: 'Admin', resourceId: 'adm-789', createdAt: new Date(Date.now() - 172800000).toISOString() },
-        ]);
-        setPagination({ page: 1, limit: 20, total: 5, totalPages: 1 });
+        setLogs([]);
+        setPagination(prev => ({ ...prev, total: 0, totalPages: 0 }));
+        setLogsError('Audit logs could not be loaded. Please retry or check your permissions.');
       } finally {
         setLoading(false);
       }
@@ -169,6 +162,14 @@ export default function AuditLogs() {
     if (diff < 3600000) return `${Math.floor(diff / 60000)} minutes ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)} hours ago`;
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDetails = (details: string) => {
+    try {
+      return JSON.stringify(JSON.parse(details), null, 2);
+    } catch {
+      return details;
+    }
   };
 
   return (
@@ -413,6 +414,17 @@ export default function AuditLogs() {
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full"></div>
           </div>
+        ) : logsError ? (
+          <div className="text-center py-20 text-red-600">
+            <p className="text-lg font-semibold">Unable to load audit logs</p>
+            <p className="text-sm mt-2 text-gray-500">{logsError}</p>
+            <button
+              onClick={() => setPagination(p => ({ ...p }))}
+              className="mt-4 px-4 py-2 text-sm bg-red-50 hover:bg-red-100 text-red-700 rounded-lg"
+            >
+              Retry
+            </button>
+          </div>
         ) : logs.length === 0 ? (
           <div className="text-center py-20 text-gray-500">
             <p className="text-5xl mb-4">📋</p>
@@ -452,7 +464,7 @@ export default function AuditLogs() {
                             View details
                           </summary>
                           <pre className="mt-2 p-3 bg-gray-100 rounded-lg text-xs overflow-x-auto">
-                            {JSON.stringify(JSON.parse(log.details), null, 2)}
+                            {formatDetails(log.details)}
                           </pre>
                         </details>
                       )}

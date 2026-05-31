@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styles from './ChatInput.module.css';
 
 interface ChatInputProps {
-  onSend: (content: string) => void;
+  onSend: (content: string) => void | Promise<void>;
   disabled?: boolean;
   placeholder?: string;
   maxLength?: number;
@@ -20,6 +20,7 @@ export function ChatInput({
 }: ChatInputProps) {
   const [value, setValue] = useState('');
   const [isComposing, setIsComposing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const draftTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -67,23 +68,26 @@ export function ChatInput({
     }
   }, [value]);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     const trimmed = value.trim();
-    if (!trimmed || disabled || isComposing) return;
+    if (!trimmed || disabled || isComposing || isSubmitting) return;
 
-    onSend(trimmed);
-    setValue('');
+    setIsSubmitting(true);
+    try {
+      await onSend(trimmed);
+      setValue('');
 
-    // Clear draft
-    if (draftKey && typeof window !== 'undefined') {
-      sessionStorage.removeItem(`chat-draft-${draftKey}`);
+      if (draftKey && typeof window !== 'undefined') {
+        sessionStorage.removeItem(`chat-draft-${draftKey}`);
+      }
+
+      if (inputRef.current) {
+        inputRef.current.style.height = 'auto';
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Reset textarea height
-    if (inputRef.current) {
-      inputRef.current.style.height = 'auto';
-    }
-  }, [value, disabled, isComposing, onSend, draftKey]);
+  }, [value, disabled, isComposing, isSubmitting, onSend, draftKey]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Submit on Enter (without Shift)
@@ -122,7 +126,7 @@ export function ChatInput({
         
         <button
           onClick={handleSubmit}
-          disabled={!value.trim() || disabled}
+          disabled={!value.trim() || disabled || isSubmitting}
           className={styles.sendBtn}
           aria-label="Send message"
         >

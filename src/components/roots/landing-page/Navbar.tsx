@@ -4,12 +4,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { BrandMark } from '@/components/BrandMark';
 import { bottomNavLinks } from '../../../libs/MainnavLinks';
-import { FiSearch, FiMenu, FiX, FiChevronDown, FiUser } from 'react-icons/fi';
-import { usePathname, useRouter } from 'next/navigation';
+import { FiSearch, FiMenu, FiX, FiChevronDown } from 'react-icons/fi';
+import { usePathname } from 'next/navigation';
 import { useAuthStore, getRoleBasePath } from '../../../store/AuthStore';
 import AppLink from '../../AppLink';
 import { useLoading } from '../../LoadingProvider';
-import { useHasHydrated } from '../../HydrationGate';
+import { UserProfileDropdown } from '../../UserProfileDropdown';
 
 interface DropdownItem {
   name: string;
@@ -30,51 +30,23 @@ interface NavLink {
 
 const Navbar: React.FC = () => {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, fetchCurrentUser, logout, isLoggingOut } = useAuthStore();
+  const currentUser = useAuthStore((state) => state.currentUser);
+  const isInitializing = useAuthStore((state) => state.isInitializing);
+  const logout = useAuthStore((state) => state.logout);
+  const isLoggingOut = useAuthStore((state) => state.isLoggingOut);
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [activeNestedDropdown, setActiveNestedDropdown] = useState<{ section: string, item: string } | null>(null);
-  const [userMenuOpen, setUserMenuOpen] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  
-  // Track Zustand hydration to prevent UI flash
-  const hasHydrated = useHasHydrated();
   
   const searchRef = useRef<HTMLDivElement>(null);
   const navbarRef = useRef<HTMLDivElement>(null);
   const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const userMenuRef = useRef<HTMLDivElement>(null);
-  const { startLoading, stopLoading } = useLoading();
+  const { startLoading } = useLoading();
 
-  const dashboardRoute = getRoleBasePath(user?.role);
-
-  // Fetch user data on mount with proper error handling
-  useEffect(() => {
-    const initAuth = async () => {
-      setIsLoading(true);
-      try {
-        await fetchCurrentUser();
-      } catch (error) {
-        console.error("Auth initialization error:", error);
-        // Auth failed, but we still want to stop loading
-      } finally {
-        // Always set loading to false, even if the fetch fails
-        setIsLoading(false);
-      }
-    };
-
-    // Set a timeout to ensure loading doesn't hang indefinitely
-    const loadingTimeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 3000); // 3 seconds max loading time
-
-    initAuth();
-
-    return () => clearTimeout(loadingTimeout);
-  }, [fetchCurrentUser]);
+  const user = currentUser;
+  const dashboardRoute = getRoleBasePath(currentUser?.role);
 
   // Handle scroll events
   useEffect(() => {
@@ -100,19 +72,12 @@ const Navbar: React.FC = () => {
         setActiveDropdown(null);
         setActiveNestedDropdown(null);
       }
-
-      // Handle user menu close
-      if (userMenuOpen && 
-          userMenuRef.current && 
-          !userMenuRef.current.contains(event.target as Node)) {
-        setUserMenuOpen(false);
-      }
     };
     
     // Use 'click' instead of 'mousedown' so element click handlers run first
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [activeDropdown, userMenuOpen]);
+  }, [activeDropdown]);
 
   // Close dropdowns when pressing escape
   useEffect(() => {
@@ -121,7 +86,6 @@ const Navbar: React.FC = () => {
         setActiveDropdown(null);
         setActiveNestedDropdown(null);
         setSearchOpen(false);
-        setUserMenuOpen(false);
       }
     };
     
@@ -157,52 +121,25 @@ const Navbar: React.FC = () => {
     return 'left-1/2 -translate-x-1/2';
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     startLoading('Signing out...');
 
     // Close UI elements immediately
     setMobileMenuOpen(false);
     setActiveDropdown(null);
     setActiveNestedDropdown(null);
-    setUserMenuOpen(false);
 
-    // Clear all auth cookies immediately (before async logout)
-    if (typeof document !== 'undefined') {
-      document.cookie = 'is_authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      document.cookie = 'apex_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    }
-
-    // Clear localStorage immediately
     try {
-      localStorage.removeItem('apex-auth');
-    } catch (e) {
-      // ignore
-    }
-
-    // Trigger client-side signout in background
-    try {
-      logout().catch((err) => {
-        if (process.env.NODE_ENV !== 'production') {
-          console.error('Logout API error (background):', err);
-        }
-      });
+      await logout();
     } catch (err) {
       if (process.env.NODE_ENV !== 'production') {
-        console.error('Logout invocation failed:', err);
+        console.error('Logout API error:', err);
       }
+    } finally {
+      window.location.href = '/';
     }
-
-    // Use hard navigation for clean state reset (same as Dashboard Navbar)
-    stopLoading();
-    window.location.href = '/';
   };
 
-  const toggleUserMenu = () => {
-    setUserMenuOpen(!userMenuOpen);
-  };
-
-  // Determine if logged in - note the explicit check for null because user could be defined but empty
   const isLoggedIn = user !== null && typeof user === 'object' && user?.id;
 
   // Lock body scroll when mobile menu is open
@@ -417,126 +354,12 @@ const Navbar: React.FC = () => {
 
             {/* Auth Buttons (Desktop) */}
             <div className="hidden md:flex items-center gap-1">
-              {(isLoading || !hasHydrated) ? (
-                // Loading state indicator (shown while fetching user OR during Zustand rehydration)
+              {isInitializing ? (
                 <div className={`rounded-full h-6 w-6 border-2 border-t-transparent animate-spin ${
                   isScrolled ? 'border-gray-300' : 'border-white'
                 }`}></div>
               ) : isLoggedIn ? (
-                <>
-                  {/* Notification Bell Icon */}
-                  <button
-                    className={`p-2 rounded-md transition-colors ${
-                      isScrolled ? 'text-gray-600 hover:bg-gray-100' : 'text-white hover:bg-white/10'
-                    }`}
-                    title="Notifications"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                    </svg>
-                  </button>
-
-                  {/* Desktop Profile Avatar Dropdown */}
-                  <div className="relative" ref={userMenuRef}>
-                    <button
-                      onClick={toggleUserMenu}
-                      className={`flex items-center justify-center w-9 h-9 rounded-lg transition-all ${
-                        isScrolled 
-                          ? 'bg-blue-600 shadow-lg shadow-blue-500/25 text-white' 
-                          : 'bg-white/20 backdrop-blur-sm border border-white/20 text-white hover:bg-white/30'
-                      }`}
-                      title="Profile"
-                    >
-                      <span className="text-sm font-bold">
-                        {(user?.firstName?.[0] || 'U')}{(user?.lastName?.[0] || '')}
-                      </span>
-                    </button>
-
-                    {/* Desktop User Dropdown */}
-                    {userMenuOpen && (
-                      <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-2xl z-[9999] py-1 border border-slate-100">
-                        {/* User Info */}
-                        <div className="px-4 py-3 border-b border-slate-100">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white font-bold shadow-md">
-                              {(user?.firstName?.[0] || 'U')}{(user?.lastName?.[0] || '')}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-semibold text-slate-800 text-sm truncate">{user?.firstName} {user?.lastName}</p>
-                              <p className="text-xs text-slate-500 truncate">{user?.email}</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Menu Items */}
-                        <div className="py-1">
-                          <AppLink 
-                            href="/" 
-                            onClick={() => setUserMenuOpen(false)} 
-                            className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                          >
-                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                            </svg>
-                            Home
-                          </AppLink>
-                          <AppLink 
-                            href={dashboardRoute} 
-                            onClick={() => setUserMenuOpen(false)} 
-                            className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                          >
-                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                            </svg>
-                            Dashboard
-                          </AppLink>
-                          <AppLink 
-                            href={`${dashboardRoute}/profile`} 
-                            onClick={() => setUserMenuOpen(false)} 
-                            className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                          >
-                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            Profile
-                          </AppLink>
-                          <AppLink 
-                            href={`${dashboardRoute}/settings`} 
-                            onClick={() => setUserMenuOpen(false)} 
-                            className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                          >
-                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            Settings
-                          </AppLink>
-                        </div>
-
-                        {/* Logout */}
-                        <div className="py-1 border-t border-slate-100">
-                          <button 
-                            onClick={handleLogout} 
-                            disabled={isLoggingOut} 
-                            className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                          >
-                            {isLoggingOut ? (
-                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                              </svg>
-                            ) : (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                              </svg>
-                            )}
-                            {isLoggingOut ? 'Logging out...' : 'Logout'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </>
+                <UserProfileDropdown tone={isScrolled ? 'light' : 'dark'} />
               ) : (
                 <>
                   <Link 
@@ -568,105 +391,8 @@ const Navbar: React.FC = () => {
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center gap-2">
               {/* Mobile Profile Avatar (when logged in) */}
-              {!isLoading && hasHydrated && isLoggedIn && (
-                <div className="relative" ref={userMenuRef}>
-                  <button
-                    onClick={toggleUserMenu}
-                    className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all ${
-                      isScrolled 
-                        ? 'bg-blue-600 shadow-lg shadow-blue-500/25' 
-                        : 'bg-white/20 backdrop-blur-sm border border-white/20'
-                    }`}
-                  >
-                    <span className={`text-sm font-bold ${isScrolled ? 'text-white' : 'text-white'}`}>
-                      {(user?.firstName?.[0] || 'U')}{(user?.lastName?.[0] || '')}
-                    </span>
-                  </button>
-
-                  {/* Mobile User Dropdown */}
-                  {userMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-2xl z-[100] py-1 border border-slate-100">
-                      {/* User Info */}
-                      <div className="px-4 py-3 border-b border-slate-100">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white font-bold shadow-md">
-                            {(user?.firstName?.[0] || 'U')}{(user?.lastName?.[0] || '')}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-slate-800 text-sm truncate">{user?.firstName} {user?.lastName}</p>
-                            <p className="text-xs text-slate-500 truncate">{user?.email}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Menu Items */}
-                      <div className="py-1">
-                        <AppLink 
-                          href="/" 
-                          onClick={() => setUserMenuOpen(false)} 
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                        >
-                          <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                          </svg>
-                          Home
-                        </AppLink>
-                        <AppLink 
-                          href={dashboardRoute} 
-                          onClick={() => setUserMenuOpen(false)} 
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                        >
-                          <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                          </svg>
-                          Dashboard
-                        </AppLink>
-                        <AppLink 
-                          href={`${dashboardRoute}/profile`} 
-                          onClick={() => setUserMenuOpen(false)} 
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                        >
-                          <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          Profile
-                        </AppLink>
-                        <AppLink 
-                          href={`${dashboardRoute}/settings`} 
-                          onClick={() => setUserMenuOpen(false)} 
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                        >
-                          <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          Settings
-                        </AppLink>
-                      </div>
-
-                      {/* Logout */}
-                      <div className="py-1 border-t border-slate-100">
-                        <button 
-                          onClick={handleLogout} 
-                          disabled={isLoggingOut} 
-                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                        >
-                          {isLoggingOut ? (
-                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                            </svg>
-                          ) : (
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                          )}
-                          {isLoggingOut ? 'Logging out...' : 'Logout'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+              {!isInitializing && isLoggedIn && (
+                <UserProfileDropdown tone={isScrolled ? 'light' : 'dark'} />
               )}
 
               {/* Hamburger Button */}
@@ -722,9 +448,9 @@ const Navbar: React.FC = () => {
                         {(user?.firstName?.[0] || 'U')}{(user?.lastName?.[0] || '')}
                       </span>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">{user?.firstName || 'User'} {user?.lastName || ''}</p>
-                      <p className="text-xs text-gray-500 font-medium">{user?.email || 'No email available'}</p>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-gray-900">{user?.firstName || 'User'} {user?.lastName || ''}</p>
+                      <p className="truncate text-xs font-medium text-gray-500">{user?.email || 'No email available'}</p>
                     </div>
                   </div>
                 </div>
@@ -834,7 +560,7 @@ const Navbar: React.FC = () => {
             
               {/* Mobile Auth Buttons */}
               <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-                {isLoading ? (
+                {isInitializing ? (
                   <div className="flex justify-center py-2">
                     <div className="rounded-full h-5 w-5 border-2 border-t-transparent border-blue-600 animate-spin"></div>
                   </div>

@@ -24,7 +24,7 @@ export const AuthService = {
   },
 
   async resetPassword(password: string, token: string): Promise<any> {
-    const { data } = await api.post('/auth/reset-password', { newPassword: password, resetToken: token });
+    const { data } = await api.put('/auth/reset-password', { newPassword: password, resetToken: token });
     return data;
   },
 };

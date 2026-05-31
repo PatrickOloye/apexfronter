@@ -61,10 +61,10 @@ const ServiceCard = ({ service, isReversed }: { service: Service; isReversed: bo
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-100px" }}
       transition={{ duration: 0.7 }}
-      className={`flex flex-col ${isReversed ? 'lg:flex-row-reverse' : 'lg:flex-row'} gap-8 lg:gap-16 items-center py-16 lg:py-24`}
+      className={`flex w-full min-w-0 flex-col ${isReversed ? 'lg:flex-row-reverse' : 'lg:flex-row'} gap-8 lg:gap-16 items-center py-16 lg:py-24`}
     >
       {/* Image Section */}
-      <div className="w-full lg:w-1/2">
+      <div className="w-full min-w-0 lg:w-1/2">
         <motion.div
           whileHover={{ scale: 1.02, rotate: isReversed ? -1 : 1 }}
           transition={{ duration: 0.4 }}
@@ -94,7 +94,7 @@ const ServiceCard = ({ service, isReversed }: { service: Service; isReversed: bo
       </div>
 
       {/* Content Section */}
-      <div className="w-full lg:w-1/2">
+      <div className="w-full min-w-0 lg:w-1/2">
         {/* Subtitle Badge */}
         <motion.span
           initial={{ opacity: 0, x: -20 }}
@@ -112,7 +112,7 @@ const ServiceCard = ({ service, isReversed }: { service: Service; isReversed: bo
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
-          className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-4"
+          className="break-words text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-4"
         >
           {service.title}
         </motion.h2>
@@ -123,7 +123,7 @@ const ServiceCard = ({ service, isReversed }: { service: Service; isReversed: bo
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.4 }}
-          className="text-lg text-slate-600 mb-8 leading-relaxed"
+          className="break-words text-lg text-slate-600 mb-8 leading-relaxed"
         >
           {service.description}
         </motion.p>
@@ -135,7 +135,7 @@ const ServiceCard = ({ service, isReversed }: { service: Service; isReversed: bo
           viewport={{ once: true }}
           transition={{ delay: 0.5 }}
         >
-          <div className="flex gap-2 mb-6">
+          <div className="flex flex-wrap gap-2 mb-6">
             <button
               onClick={() => setActiveTab('features')}
               className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all ${
@@ -166,7 +166,7 @@ const ServiceCard = ({ service, isReversed }: { service: Service; isReversed: bo
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-3"
+              className="grid min-w-0 grid-cols-1 md:grid-cols-2 gap-3"
             >
               {(activeTab === 'features' ? service.features : service.benefits).map((item, index) => (
                 <motion.div
@@ -174,12 +174,12 @@ const ServiceCard = ({ service, isReversed }: { service: Service; isReversed: bo
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
+                  className="flex min-w-0 items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
                 >
-                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-r ${service.gradient} flex items-center justify-center text-white text-sm`}>
+                  <div className={`w-8 h-8 shrink-0 rounded-lg bg-gradient-to-r ${service.gradient} flex items-center justify-center text-white text-sm`}>
                     ✓
                   </div>
-                  <span className="text-slate-700 text-sm font-medium">{item}</span>
+                  <span className="min-w-0 break-words text-slate-700 text-sm font-medium">{item}</span>
                 </motion.div>
               ))}
             </motion.div>
@@ -198,7 +198,7 @@ const ServiceCard = ({ service, isReversed }: { service: Service; isReversed: bo
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.2)" }}
               whileTap={{ scale: 0.98 }}
-              className={`px-8 py-4 rounded-xl font-semibold text-white bg-gradient-to-r ${service.gradient} shadow-lg inline-flex items-center gap-2`}
+              className={`inline-flex max-w-full items-center gap-2 rounded-xl px-8 py-4 font-semibold text-white bg-gradient-to-r ${service.gradient} shadow-lg`}
             >
               Learn More
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,13 +229,13 @@ const BankingServices = () => {
             </svg>
             Our Services
           </span>
-          <h2 className="text-4xl md:text-5xl font-bold text-slate-900">
+          <h2 className="break-words text-4xl md:text-5xl font-bold text-slate-900">
             Comprehensive{' '}
             <span className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
               Banking Solutions
             </span>
           </h2>
-          <p className="text-lg text-slate-600 mt-4 max-w-2xl mx-auto">
+          <p className="mx-auto mt-4 max-w-2xl break-words text-lg text-slate-600">
             From trade finance to digital banking, we provide everything you need to manage and grow your wealth.
           </p>
         </motion.div>
