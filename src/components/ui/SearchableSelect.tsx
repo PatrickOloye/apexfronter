@@ -43,7 +43,7 @@ export default function SearchableSelect({
   
   const selectedOption = options.find((opt) => opt.value === value);
   const inputPadding = showImages ? 'pl-3' : 'pl-4';
-  const selectedText = selectedOption ? selectedOption.shortLabel || selectedOption.label : '';
+  const selectedText = selectedOption ? selectedOption.label : '';
 
   const filteredOptions =
     query === ''
@@ -81,12 +81,13 @@ export default function SearchableSelect({
                         </div>
                     </div>
                    ) : null}
+                  {open ? (
                   <Combobox.Input
-                    className={`min-w-0 w-full border-none py-4 ${inputPadding} pr-10 text-xs leading-5 text-white bg-transparent focus:ring-0 focus:outline-none placeholder-slate-500 sm:text-sm`}
+                    className={`min-w-0 w-full border-none py-4 ${inputPadding} pr-10 text-[11px] leading-5 text-white bg-transparent focus:ring-0 focus:outline-none placeholder-slate-500 sm:text-xs md:text-sm`}
                     title={selectedText}
                     displayValue={(val: string) => {
                       const opt = options.find((o) => o.value === val);
-                      return opt ? opt.shortLabel || opt.label : '';
+                      return opt ? opt.label : '';
                     }}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder={placeholder}
@@ -95,6 +96,16 @@ export default function SearchableSelect({
                     autoCapitalize="off"
                     spellCheck={false}
                   />
+                  ) : (
+                    <Combobox.Button
+                      className={`min-h-[52px] min-w-0 flex-1 py-3 ${inputPadding} pr-10 text-left text-[11px] leading-snug text-white focus:outline-none sm:text-xs md:text-sm`}
+                      title={selectedText || placeholder}
+                    >
+                      <span className={`${selectedText ? 'text-white' : 'text-slate-500'} block min-w-0 whitespace-normal break-words`}>
+                        {selectedText || placeholder}
+                      </span>
+                    </Combobox.Button>
+                  )}
               </div>
               
               <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">

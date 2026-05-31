@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { api } from '@/libs/http/api';
 import SearchableSelect, { SelectOption } from './SearchableSelect';
+import { getPhoneCodeOptions } from '@/libs/geoOptions';
 
 interface PhoneCodeSelectProps {
   value: string;
@@ -27,34 +27,11 @@ export default function PhoneCodeSelect({
     
     const fetchCodes = async () => {
       try {
-        const { data } = await api.get('https://restcountries.com/v3.1/all?fields=name,cca2,flags,idd');
+        const formatted = await getPhoneCodeOptions();
         if (!mounted) return;
-
-        const formatted: SelectOption[] = data
-          .filter((c: any) => c.idd?.root)
-          .map((c: any) => {
-            const root = c.idd.root;
-            // Some countries like US have multiple suffixes. Use the first one for the main code display.
-            const suffix = c.idd.suffixes?.length === 1 ? c.idd.suffixes[0] : '';
-            const code = `${root}${suffix}`;
-            
-            return {
-              id: c.cca2,
-              value: code,
-              label: code,
-              shortLabel: code,
-              searchText: `${code} ${c.name.common}`,
-            };
-          })
-          .sort((a: SelectOption, b: SelectOption) => a.label.localeCompare(b.label));
-
         setOptions(formatted);
       } catch (err) {
         console.error('Failed to load phone codes', err);
-        setOptions([
-          { id: 'US', value: '+1', label: '+1', shortLabel: '+1', searchText: '+1 United States' },
-          { id: 'GB', value: '+44', label: '+44', shortLabel: '+44', searchText: '+44 United Kingdom' },
-        ]);
       } finally {
         if (mounted) setLoading(false);
       }

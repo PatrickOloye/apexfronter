@@ -313,7 +313,7 @@ const inputClass = "peer w-full min-w-0 px-3 py-4 text-xs sm:px-4 sm:text-sm bg-
                       <input id="email" name="email" type="email" value={formData.email} onChange={handleChange} className={inputClass} placeholder="Email" disabled={isLoading} autoComplete="off" />
                       <label htmlFor="email" className={labelClass}>Email Address</label>
                     </div>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(7.5rem,9rem)_1fr]">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       
                       <PhoneCodeSelect
                         value={formData.phoneCountryCode}
@@ -355,6 +355,7 @@ const inputClass = "peer w-full min-w-0 px-3 py-4 text-xs sm:px-4 sm:text-sm bg-
                         value={formData.countryOfOrigin}
                         onChange={(val) => handleSelectChange('countryOfOrigin', val)}
                         disabled={isLoading}
+                        className="min-w-0"
                       />
                     </div>
                   </motion.div>

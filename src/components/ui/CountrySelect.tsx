@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { api } from '@/libs/http/api';
 import SearchableSelect, { SelectOption } from './SearchableSelect';
+import { getCountryOptions } from '@/libs/geoOptions';
 
 interface CountrySelectProps {
   value: string;
@@ -8,6 +8,7 @@ interface CountrySelectProps {
   label?: string;
   placeholder?: string;
   disabled?: boolean;
+  className?: string;
 }
 
 export default function CountrySelect({
@@ -15,7 +16,8 @@ export default function CountrySelect({
   onChange,
   label = "Country",
   placeholder = "Select Country",
-  disabled = false
+  disabled = false,
+  className = ''
 }: CountrySelectProps) {
   const [options, setOptions] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,18 +27,8 @@ export default function CountrySelect({
     
     const fetchCountries = async () => {
       try {
-        const { data } = await api.get('https://restcountries.com/v3.1/all?fields=name,cca2,flags');
+        const formatted = await getCountryOptions();
         if (!mounted) return;
-
-        const formatted = data
-          .map((c: any) => ({
-            value: c.cca2, // This user wants the country code value, normally CCA2 implies ISO code (e.g. US, GB)
-            label: c.name.common,
-            image: c.flags?.svg || c.flags?.png,
-            id: c.cca2
-          }))
-          .sort((a: any, b: any) => a.label.localeCompare(b.label));
-
         setOptions(formatted);
       } catch (err) {
         console.error('Failed to load countries', err);
@@ -58,6 +50,7 @@ export default function CountrySelect({
             options={[{ value: '', label: 'Loading countries...' }]}
             disabled={true}
             placeholder="Loading..."
+            className={className}
         />
       )
   }
@@ -71,6 +64,7 @@ export default function CountrySelect({
       placeholder={placeholder}
       disabled={disabled || loading}
       dropUp={true}
+      className={className}
     />
   );
 }
