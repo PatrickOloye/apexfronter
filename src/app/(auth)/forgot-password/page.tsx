@@ -30,8 +30,11 @@ export default function ForgotPassword() {
     }
   };
 
+  const inputClass = "peer w-full min-w-0 px-3 py-4 text-xs sm:px-4 sm:text-sm bg-white/5 border border-white/10 rounded-xl text-white placeholder-transparent focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 focus:outline-none transition-all";
+  const labelClass = "absolute left-3 top-4 max-w-[calc(100%-1.5rem)] break-words text-xs leading-snug text-slate-400 transition-all pointer-events-none sm:left-4 sm:text-sm peer-focus:-top-6 peer-focus:left-1 peer-focus:text-[11px] peer-focus:text-blue-400 sm:peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-6 peer-[:not(:placeholder-shown)]:left-1 peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:text-blue-400 sm:peer-[:not(:placeholder-shown)]:text-xs";
+
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950">
+    <div className="relative min-h-screen overflow-x-hidden overflow-y-auto bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950">
       {/* Background Elements (Same as SignIn) */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div 
@@ -42,7 +45,7 @@ export default function ForgotPassword() {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px]" />
       </div>
 
-      <header className="relative z-10 w-full py-6 px-8">
+      <header className="relative z-10 w-full px-4 py-6 sm:px-8">
         <Link href="/" className="inline-flex items-center gap-2">
           <BrandMark variant="dark" size="md" />
         </Link>
@@ -54,20 +57,20 @@ export default function ForgotPassword() {
             animate={{ y: 0, opacity: 1 }}
             className="w-full max-w-md"
         >
-            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
+            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-5 shadow-2xl sm:p-8">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-white mb-2">Forgot Password?</h1>
-                    <p className="text-slate-400">Enter your email to receive a reset link</p>
+                    <h1 className="mb-2 text-2xl font-bold text-white sm:text-3xl">Forgot Password?</h1>
+                    <p className="break-words text-sm text-slate-400 sm:text-base">Enter your email to receive a reset link</p>
                 </div>
 
                 {successMessage && (
-                    <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-300 text-sm">
+                    <div className="mb-6 break-words rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-xs text-green-300 sm:text-sm">
                         {successMessage}
                     </div>
                 )}
 
                 {errorMessage && (
-                    <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm">
+                    <div className="mb-6 break-words rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-xs text-red-300 sm:text-sm">
                         {errorMessage}
                     </div>
                 )}
@@ -79,10 +82,10 @@ export default function ForgotPassword() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="peer w-full px-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-transparent focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 focus:outline-none transition-all"
+                            className={inputClass}
                             placeholder="Email"
                         />
-                        <label className="absolute left-4 top-4 text-slate-400 text-sm transition-all pointer-events-none peer-focus:-top-6 peer-focus:left-1 peer-focus:text-xs peer-focus:text-blue-400 peer-[:not(:placeholder-shown)]:-top-6 peer-[:not(:placeholder-shown)]:left-1 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:text-blue-400">
+                        <label className={labelClass}>
                             Email Address
                         </label>
                     </div>
@@ -90,14 +93,14 @@ export default function ForgotPassword() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-4 px-6 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 shadow-lg transition-all disabled:opacity-50"
+                        className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-4 text-sm font-semibold text-white shadow-lg transition-all hover:from-blue-500 hover:to-blue-600 disabled:opacity-50 sm:px-6 sm:text-base"
                     >
                         {isLoading ? 'Sending...' : 'Send Reset Link'}
                     </button>
                 </form>
 
                 <div className="mt-8 text-center">
-                    <Link href="/signin" className="text-slate-400 hover:text-white transition-colors text-sm">
+                    <Link href="/signin" className="break-words text-xs text-slate-400 transition-colors hover:text-white sm:text-sm">
                         Back to Sign In
                     </Link>
                 </div>

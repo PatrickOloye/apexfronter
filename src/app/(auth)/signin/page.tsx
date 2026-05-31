@@ -56,8 +56,11 @@ export default function SignIn() {
     }
   };
 
+  const inputClass = "peer w-full min-w-0 px-3 py-4 text-xs sm:px-4 sm:text-sm bg-white/5 border border-white/10 rounded-xl text-white placeholder-transparent focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 focus:outline-none transition-all duration-300 disabled:opacity-50";
+  const labelClass = "absolute left-3 top-4 max-w-[calc(100%-1.5rem)] break-words text-xs leading-snug text-slate-400 transition-all duration-300 pointer-events-none sm:left-4 sm:text-sm peer-focus:-top-6 peer-focus:left-1 peer-focus:text-[11px] peer-focus:text-blue-400 sm:peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-6 peer-[:not(:placeholder-shown)]:left-1 peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:text-blue-400 sm:peer-[:not(:placeholder-shown)]:text-xs";
+
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950">
+    <div className="relative min-h-screen overflow-x-hidden overflow-y-auto bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Floating orbs */}
@@ -97,7 +100,7 @@ export default function SignIn() {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="relative z-10 w-full py-6 px-8"
+        className="relative z-10 w-full px-4 py-6 sm:px-8"
       >
         <Link href="/" className="inline-flex items-center gap-2 group">
           <BrandMark variant="dark" size="md" />
@@ -113,11 +116,11 @@ export default function SignIn() {
           className="w-full max-w-md"
         >
           {/* Glassmorphism Card */}
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl shadow-black/20">
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-5 shadow-2xl shadow-black/20 sm:p-8">
             {/* Header */}
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-              <p className="text-slate-400">Sign in to access your {BRAND.shortName} account</p>
+              <h1 className="mb-2 text-2xl font-bold text-white sm:text-3xl">Welcome Back</h1>
+              <p className="break-words text-sm text-slate-400 sm:text-base">Sign in to access your {BRAND.shortName} account</p>
             </div>
 
             {/* Form */}
@@ -133,12 +136,12 @@ export default function SignIn() {
                   required
                   disabled={isLoading}
                   autoComplete="off"
-                  className="peer w-full px-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-transparent focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 focus:outline-none transition-all duration-300 disabled:opacity-50"
+                  className={inputClass}
                   placeholder="Email"
                 />
                 <label 
                   htmlFor="email" 
-                  className="absolute left-4 top-4 text-slate-400 text-sm transition-all duration-300 pointer-events-none peer-focus:-top-6 peer-focus:left-1 peer-focus:text-xs peer-focus:text-blue-400 peer-[:not(:placeholder-shown)]:-top-6 peer-[:not(:placeholder-shown)]:left-1 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:text-blue-400"
+                  className={labelClass}
                 >
                   Email Address
                 </label>
@@ -155,12 +158,12 @@ export default function SignIn() {
                   required
                   disabled={isLoading}
                   autoComplete="current-password"
-                  className="peer w-full px-4 py-4 pr-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder-transparent focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 focus:outline-none transition-all duration-300 disabled:opacity-50"
+                  className={`${inputClass} pr-12`}
                   placeholder="Password"
                 />
                 <label 
                   htmlFor="password" 
-                  className="absolute left-4 top-4 text-slate-400 text-sm transition-all duration-300 pointer-events-none peer-focus:-top-6 peer-focus:left-1 peer-focus:text-xs peer-focus:text-blue-400 peer-[:not(:placeholder-shown)]:-top-6 peer-[:not(:placeholder-shown)]:left-1 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:text-blue-400"
+                  className={labelClass}
                 >
                   Password
                 </label>
@@ -186,7 +189,7 @@ export default function SignIn() {
               <div className="text-right">
                 <Link 
                   href="/forgot-password" 
-                  className="text-sm text-slate-400 hover:text-blue-400 transition-colors"
+                  className="break-words text-xs text-slate-400 transition-colors hover:text-blue-400 sm:text-sm"
                 >
                   Forgot your password?
                 </Link>
@@ -198,7 +201,7 @@ export default function SignIn() {
                 disabled={isLoading}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="relative w-full py-4 px-6 overflow-hidden rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-4 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:from-blue-500 hover:to-blue-600 hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6 sm:text-base"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   {isLoading ? (
@@ -236,7 +239,7 @@ export default function SignIn() {
             </div>
 
             {/* Sign Up Link */}
-            <p className="text-center text-slate-400">
+            <p className="break-words text-center text-sm text-slate-400 sm:text-base">
               Don&apos;t have an account?{' '}
               <Link 
                 href="/signup" 
@@ -271,7 +274,7 @@ export default function SignIn() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="mt-8 flex items-center justify-center gap-6"
+            className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-6"
           >
             <div className="flex items-center gap-2 text-slate-500 text-xs">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

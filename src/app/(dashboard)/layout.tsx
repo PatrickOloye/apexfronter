@@ -87,7 +87,7 @@ export default function DashboardLayout({
                     setIsSidebarOpen(false);
                   }
                 }}>
-                  <Menu />
+                  <Menu variant="drawer" />
                 </div>
               </div>
               

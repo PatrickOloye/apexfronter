@@ -161,8 +161,8 @@ export default function SignUp() {
     }
   };
 
-const inputClass = "peer w-full px-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-transparent focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 focus:outline-none transition-all duration-300 disabled:opacity-50";
-  const labelClass = "absolute left-4 top-4 text-slate-400 text-sm transition-all duration-300 pointer-events-none peer-focus:-top-6 peer-focus:left-1 peer-focus:text-xs peer-focus:text-blue-400 peer-[:not(:placeholder-shown)]:-top-6 peer-[:not(:placeholder-shown)]:left-1 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:text-blue-400";
+const inputClass = "peer w-full min-w-0 px-3 py-4 text-xs sm:px-4 sm:text-sm bg-white/5 border border-white/10 rounded-xl text-white placeholder-transparent focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 focus:outline-none transition-all duration-300 disabled:opacity-50";
+  const labelClass = "absolute left-3 top-4 max-w-[calc(100%-1.5rem)] break-words text-xs leading-snug text-slate-400 transition-all duration-300 pointer-events-none sm:left-4 sm:text-sm peer-focus:-top-6 peer-focus:left-1 peer-focus:text-[11px] peer-focus:text-blue-400 sm:peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-6 peer-[:not(:placeholder-shown)]:left-1 peer-[:not(:placeholder-shown)]:text-[11px] peer-[:not(:placeholder-shown)]:text-blue-400 sm:peer-[:not(:placeholder-shown)]:text-xs";
 
   return (
     <div className="min-h-screen relative overflow-x-hidden overflow-y-auto bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950">
@@ -185,7 +185,7 @@ const inputClass = "peer w-full px-4 py-4 bg-white/5 border border-white/10 roun
       <motion.header 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="relative z-10 w-full py-6 px-8"
+        className="relative z-10 w-full px-4 py-6 sm:px-8"
       >
         <Link href="/" className="inline-flex items-center gap-2 group">
           <BrandMark variant="dark" size="md" />
@@ -201,11 +201,11 @@ const inputClass = "peer w-full px-4 py-4 bg-white/5 border border-white/10 roun
           className="w-full max-w-2xl"
         >
           {/* Glassmorphism Card */}
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-5 shadow-2xl sm:p-8">
             {/* Header */}
             <div className="text-center mb-6">
-              <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-              <p className="text-slate-400">Join {BRAND.name} and start your journey</p>
+              <h1 className="mb-2 text-2xl font-bold text-white sm:text-3xl">Create Account</h1>
+              <p className="break-words text-sm text-slate-400 sm:text-base">Join {BRAND.name} and start your journey</p>
             </div>
 
             {/* Step Indicator */}
@@ -214,7 +214,7 @@ const inputClass = "peer w-full px-4 py-4 bg-white/5 border border-white/10 roun
                 <div key={step.id} className="flex items-center">
                   <button
                     onClick={() => currentStep > step.id && setCurrentStep(step.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                    className={`flex items-center gap-2 rounded-full px-3 py-2 transition-all sm:px-4 ${
                       currentStep === step.id
                         ? 'bg-blue-500 text-white'
                         : currentStep > step.id
@@ -228,7 +228,7 @@ const inputClass = "peer w-full px-4 py-4 bg-white/5 border border-white/10 roun
                     <span className="hidden sm:block text-sm font-medium">{step.title}</span>
                   </button>
                   {index < STEPS.length - 1 && (
-                    <div className={`w-8 h-0.5 mx-2 ${currentStep > step.id ? 'bg-green-500' : 'bg-white/10'}`} />
+                    <div className={`mx-1 h-0.5 w-5 sm:mx-2 sm:w-8 ${currentStep > step.id ? 'bg-green-500' : 'bg-white/10'}`} />
                   )}
                 </div>
               ))}
@@ -313,16 +313,16 @@ const inputClass = "peer w-full px-4 py-4 bg-white/5 border border-white/10 roun
                       <input id="email" name="email" type="email" value={formData.email} onChange={handleChange} className={inputClass} placeholder="Email" disabled={isLoading} autoComplete="off" />
                       <label htmlFor="email" className={labelClass}>Email Address</label>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(7.5rem,9rem)_1fr]">
                       
                       <PhoneCodeSelect
                         value={formData.phoneCountryCode}
                         onChange={(val) => handleSelectChange('phoneCountryCode', val)}
                         disabled={isLoading}
-                        className="col-span-1"
+                        className="min-w-0"
                       />
 
-                      <div className="relative col-span-2">
+                      <div className="relative min-w-0">
                         <input
                           id="phoneNumber"
                           name="phoneNumber"
@@ -384,7 +384,7 @@ const inputClass = "peer w-full px-4 py-4 bg-white/5 border border-white/10 roun
                         {showConfirmPassword ? '👁' : '👁‍🗨'}
                       </button>
                     </div>
-                    <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-sm text-blue-300">
+                    <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-4 text-xs text-blue-300 sm:text-sm">
                       <p className="font-medium mb-2">Password Requirements:</p>
                       <ul className="space-y-1 text-xs">
                         <li className={formData.password.length >= 8 ? 'text-green-400' : ''}>• At least 8 characters</li>
@@ -397,23 +397,23 @@ const inputClass = "peer w-full px-4 py-4 bg-white/5 border border-white/10 roun
               </AnimatePresence>
 
               {/* Navigation Buttons */}
-              <div className="flex gap-4 mt-8">
+              <div className="mt-8 flex gap-3 sm:gap-4">
                 {currentStep > 1 && (
                   <motion.button type="button" onClick={prevStep} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                    className="flex-1 py-4 px-6 rounded-xl font-semibold text-white bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-4 text-sm font-semibold text-white transition-all hover:bg-white/10 sm:px-6 sm:text-base"
                   >
                     Back
                   </motion.button>
                 )}
                 {currentStep < 3 ? (
                   <motion.button type="button" onClick={nextStep} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                    className="flex-1 py-4 px-6 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/25 transition-all"
+                    className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-4 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:from-blue-500 hover:to-blue-600 sm:px-6 sm:text-base"
                   >
                     Continue
                   </motion.button>
                 ) : (
                   <motion.button type="submit" disabled={isLoading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                    className="flex-1 py-4 px-6 rounded-xl font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 shadow-lg shadow-green-500/25 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-green-700 px-4 py-4 text-sm font-semibold text-white shadow-lg shadow-green-500/25 transition-all hover:from-green-500 hover:to-green-600 disabled:opacity-50 sm:px-6 sm:text-base"
                   >
                     {isLoading ? (
                       <>
@@ -430,7 +430,7 @@ const inputClass = "peer w-full px-4 py-4 bg-white/5 border border-white/10 roun
             </form>
 
             {/* Sign In Link */}
-            <p className="text-center text-slate-400 mt-6">
+            <p className="mt-6 break-words text-center text-sm text-slate-400 sm:text-base">
               Already have an account?{' '}
               <Link 
                 href="/signin" 

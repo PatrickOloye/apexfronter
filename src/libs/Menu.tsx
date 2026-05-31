@@ -85,9 +85,12 @@ interface MenuSection {
   items: MenuItem[];
 }
 
-const Menu = () => {
+type MenuVariant = "sidebar" | "drawer";
+
+const Menu = ({ variant = "sidebar" }: { variant?: MenuVariant }) => {
   const user = useAuthStore((state) => state.currentUser);
   const pathname = usePathname();
+  const isDrawer = variant === "drawer";
 
   // Get user role from auth store, default to 'user' if not authenticated
   const normalizedRole = normalizeRole(user?.role);
@@ -271,7 +274,7 @@ const Menu = () => {
 
           return (
             <div className="flex flex-col gap-1" key={section.title}>
-              <span className="block md:hidden lg:block text-slate-400 text-[10px] font-bold uppercase tracking-wider px-3 mb-2">
+              <span className={`${isDrawer ? "block" : "block md:hidden lg:block"} text-slate-400 text-[10px] font-bold uppercase tracking-wider px-3 mb-2`}>
                 {section.title}
               </span>
               {visibleItems.map((item) => {
@@ -283,22 +286,28 @@ const Menu = () => {
                     href={item.href}
                     key={item.label}
                     title={item.tooltip}
-                    className={`group relative flex flex-row items-center justify-start gap-3 py-3 px-3 rounded-xl transition-all duration-200 md:justify-center md:gap-3 lg:justify-start ${
+                    className={`group relative flex flex-row items-center rounded-xl transition-all duration-200 ${
+                      isDrawer
+                        ? "justify-start gap-3 px-3 py-2.5"
+                        : "justify-start gap-3 px-3 py-3 md:justify-center md:gap-3 lg:justify-start"
+                    } ${
                       active
                         ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25"
                         : "text-slate-400 hover:bg-slate-800 hover:text-white"
                     }`}
                   >
-                    <div className={`flex-shrink-0 transition-colors ${active ? "text-white" : "text-slate-500 group-hover:text-blue-400"}`}>
+                    <div className={`flex h-5 w-5 flex-shrink-0 items-center justify-center transition-colors ${active ? "text-white" : "text-slate-500 group-hover:text-blue-400"}`}>
                       {IconComponent}
                     </div>
-                    <span className={`block text-sm leading-tight md:hidden lg:block font-medium ${active ? "text-white" : ""}`}>
+                    <span className={`${isDrawer ? "block" : "block md:hidden lg:block"} min-w-0 break-words text-sm font-medium leading-snug ${active ? "text-white" : ""}`}>
                       {item.label}
                     </span>
                     {/* Tooltip for collapsed sidebar */}
-                    <div className="lg:hidden absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                      {item.label}
-                    </div>
+                    {!isDrawer && (
+                      <div className="lg:hidden absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                        {item.label}
+                      </div>
+                    )}
                   </AppLink>
                 );
               })}

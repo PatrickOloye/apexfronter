@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
-import { Listbox, Transition, Combobox } from '@headlessui/react';
-import { Check, ChevronDown, Search } from 'lucide-react';
+import { Transition, Combobox } from '@headlessui/react';
+import { Check, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 
 export interface SelectOption {
@@ -43,6 +43,7 @@ export default function SearchableSelect({
   
   const selectedOption = options.find((opt) => opt.value === value);
   const inputPadding = showImages ? 'pl-3' : 'pl-4';
+  const selectedText = selectedOption ? selectedOption.shortLabel || selectedOption.label : '';
 
   const filteredOptions =
     query === ''
@@ -55,21 +56,21 @@ export default function SearchableSelect({
         );
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative min-w-0 ${className}`}>
         {label && (
-        <label className="block text-sm font-medium text-slate-400 mb-2">
+        <label className="mb-2 block break-words text-xs font-medium leading-snug text-slate-400 sm:text-sm">
             {label}
         </label>
         )}
       <Combobox value={value} onChange={onChange} disabled={disabled}>
         {({ open }) => (
           <div className="relative mt-1">
-            <div className={`relative w-full cursor-default overflow-hidden bg-white/5 border border-white/10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm transition-all duration-300 hover:bg-white/10 ${
+            <div className={`relative w-full min-w-0 cursor-default overflow-hidden bg-white/5 border border-white/10 text-left shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 transition-all duration-300 hover:bg-white/10 ${
                 dropUp && open ? 'rounded-b-xl border-b-0' : (!dropUp && open ? 'rounded-t-xl border-b-0' : 'rounded-xl')
             }`}>
-              <div className="flex items-center w-full">
+              <div className="flex min-w-0 items-center w-full">
                    {showImages && selectedOption?.image ? (
-                    <div className="pl-4">
+                    <div className="shrink-0 pl-3 sm:pl-4">
                         <div className="relative w-5 h-5 rounded-full overflow-hidden">
                           <Image 
                             src={selectedOption.image} 
@@ -81,7 +82,8 @@ export default function SearchableSelect({
                     </div>
                    ) : null}
                   <Combobox.Input
-                    className={`w-full border-none py-4 ${inputPadding} pr-10 text-sm leading-5 text-white bg-transparent focus:ring-0 focus:outline-none placeholder-slate-500`}
+                    className={`min-w-0 w-full border-none py-4 ${inputPadding} pr-10 text-xs leading-5 text-white bg-transparent focus:ring-0 focus:outline-none placeholder-slate-500 sm:text-sm`}
+                    title={selectedText}
                     displayValue={(val: string) => {
                       const opt = options.find((o) => o.value === val);
                       return opt ? opt.shortLabel || opt.label : '';
@@ -110,14 +112,14 @@ export default function SearchableSelect({
               afterLeave={() => setQuery('')}
             >
               <Combobox.Options 
-                className={`absolute z-50 w-full overflow-auto bg-slate-900 border border-slate-800 py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm scroller max-h-60 ${
+                className={`absolute z-50 w-full min-w-0 overflow-auto bg-slate-900 border border-slate-800 py-1 text-xs shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm scroller max-h-60 ${
                     dropUp 
                         ? 'bottom-full mb-1 rounded-t-xl border-b-0' 
                         : 'mt-1 rounded-b-xl border-t-0'
                 }`}
               >
                 {filteredOptions.length === 0 && query !== '' ? (
-                  <div className="relative cursor-default select-none py-2 px-4 text-slate-400">
+                  <div className="relative cursor-default select-none px-3 py-2 text-slate-400 sm:px-4">
                     Nothing found.
                   </div>
                 ) : (
@@ -125,9 +127,9 @@ export default function SearchableSelect({
                     <Combobox.Option
                       key={option.id || option.value}
                       className={({ active }) =>
-                        `relative cursor-default select-none py-2 ${
-                          showCheck ? 'pl-10' : 'pl-4'
-                        } pr-4 transition-colors duration-150 ${
+                        `relative cursor-default select-none py-2.5 ${
+                          showCheck ? 'pl-9 sm:pl-10' : 'pl-3 sm:pl-4'
+                        } pr-3 transition-colors duration-150 sm:pr-4 ${
                           active ? 'bg-blue-600/20 text-blue-400' : 'text-slate-300'
                         }`
                       }
@@ -136,12 +138,12 @@ export default function SearchableSelect({
                       {({ selected, active }) => (
                         <>
                           <span
-                            className={`block truncate flex items-center gap-2 ${
+                            className={`flex min-w-0 items-start gap-2 whitespace-normal break-words leading-snug ${
                               selected ? 'font-medium text-blue-400' : 'font-normal'
                             }`}
                           >
                               {showImages && option.image && (
-                              <div className="relative w-5 h-5 rounded-full overflow-hidden">
+                              <div className="relative mt-0.5 h-5 w-5 shrink-0 overflow-hidden rounded-full">
                                 <Image 
                                   src={option.image} 
                                   alt="" 
@@ -150,7 +152,7 @@ export default function SearchableSelect({
                                 />
                               </div>
                             )}
-                            {option.label}
+                            <span className="min-w-0 break-words">{option.label}</span>
                           </span>
                           {showCheck && selected ? (
                             <span
