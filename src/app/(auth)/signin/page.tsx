@@ -9,16 +9,12 @@ import { motion } from 'framer-motion';
 import { useLoading } from '../../../components/LoadingProvider';
 import { BRAND } from '../../../config/brand';
 import { BrandMark } from '../../../components/BrandMark';
-
 import { toast } from 'sonner';
 
 export default function SignIn() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
-  
-  // Use persistent redirect hook to handle Back button / fast navigation
   useAuthRedirect();
-  // Removed errorMessage state
   const isLoading = useAuthStore((state) => state.isLoading);
   const { startLoading } = useLoading();
   
@@ -51,8 +47,28 @@ export default function SignIn() {
       
       window.location.href = redirectPath;
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'An error occurred during sign in';
-      toast.error(msg);
+      const rawMsg = error instanceof Error ? error.message : '';
+      
+      // Map raw backend messages to user-friendly equivalents
+      let displayMsg: string;
+      if (rawMsg.includes('No token provided') || rawMsg.includes('Invalid user data')) {
+        // Login succeeded but session cookie was blocked by the browser.
+        // This happens when frontend and backend are on different domains
+        // and the browser blocks third-party cookies.
+        displayMsg = 'Sign-in failed — your browser may be blocking cookies. Try disabling third-party cookie blocking for this site, or use a different browser.';
+      } else if (rawMsg.includes('Email verification required')) {
+        displayMsg = 'Your email has not been verified yet. Please check your inbox for a verification link.';
+      } else if (rawMsg.includes('Invalid credentials')) {
+        displayMsg = 'Incorrect email or password. Please try again.';
+      } else if (rawMsg.includes('Account is not active')) {
+        displayMsg = 'Your account has been deactivated. Please contact support.';
+      } else if (rawMsg.includes('Request failed') || rawMsg.includes('Network Error')) {
+        displayMsg = 'Unable to connect to the server. Please check your internet connection and try again.';
+      } else {
+        displayMsg = rawMsg || 'An error occurred during sign in. Please try again.';
+      }
+      
+      toast.error(displayMsg);
     }
   };
 
