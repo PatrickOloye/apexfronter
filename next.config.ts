@@ -30,12 +30,14 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         },
       },
       {
-        urlPattern: ({ request, sameOrigin }) =>
-          request.destination === '' && !sameOrigin,
+        // Never cache ANY cross-origin request — prevents Workbox from
+        // intercepting external API calls (restcountries.com, backend API, etc.)
+        // and entering infinite retry loops when they fail.
+        urlPattern: ({ sameOrigin }) => !sameOrigin,
         handler: 'NetworkOnly',
         method: 'GET',
         options: {
-          cacheName: 'never-cache-backend-api',
+          cacheName: 'never-cache-cross-origin',
         },
       },
       ...runtimeCaching,
