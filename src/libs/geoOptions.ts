@@ -15,8 +15,9 @@ type RestCountry = {
   };
 };
 
-const REST_COUNTRIES_URL =
-  'https://restcountries.com/v3.1/all?fields=name,cca2,flags,idd';
+// Use our own Next.js API proxy to avoid CORS errors when fetching from the client.
+// The proxy fetches restcountries.com server-side and caches the result for 24 hours.
+const REST_COUNTRIES_URL = '/api/geo/countries';
 
 const FALLBACK_COUNTRIES: SelectOption[] = [
   { id: 'US', value: 'US', label: 'United States' },
@@ -63,12 +64,14 @@ async function fetchCountries(): Promise<RestCountry[]> {
 
 async function fetchJson<T>(url: string, timeoutMs = 10000): Promise<T> {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(url, {
-      credentials: 'omit',
-      cache: 'force-cache',
+      // Use same-origin for our own proxy; omit credentials for external URLs
+      credentials: url.startsWith('/') ? 'same-origin' : 'omit',
+      // Rely on HTTP Cache-Control headers from the proxy (24h cache)
+      cache: 'default',
       signal: controller.signal,
     });
 
@@ -78,7 +81,7 @@ async function fetchJson<T>(url: string, timeoutMs = 10000): Promise<T> {
 
     return (await response.json()) as T;
   } finally {
-    window.clearTimeout(timeout);
+    clearTimeout(timeout);
   }
 }
 
