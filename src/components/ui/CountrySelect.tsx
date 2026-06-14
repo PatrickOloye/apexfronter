@@ -35,33 +35,26 @@ export default function CountrySelect({
       } finally {
         if (mounted) setLoading(false);
       }
+      } finally {
+        if (mounted) setLoading(false);
+      }
     };
 
     fetchCountries();
     return () => { mounted = false; };
   }, []);
 
-  if (loading && options.length === 0) {
-      return (
-        <SearchableSelect 
-            label={label}
-            value=""
-            onChange={() => {}}
-            options={[{ value: '', label: 'Loading countries...' }]}
-            disabled={true}
-            placeholder="Loading..."
-            className={className}
-        />
-      )
-  }
+  const displayOptions = (loading && options.length === 0)
+    ? [{ value: '', label: 'Loading countries...' }]
+    : options;
 
   return (
     <SearchableSelect
       label={label}
       value={value}
       onChange={onChange}
-      options={options}
-      placeholder={placeholder}
+      options={displayOptions}
+      placeholder={loading ? "Loading..." : placeholder}
       disabled={disabled || loading}
       dropUp={true}
       className={className}

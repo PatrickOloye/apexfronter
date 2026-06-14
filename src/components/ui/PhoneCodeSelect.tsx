@@ -41,29 +41,17 @@ export default function PhoneCodeSelect({
     return () => { mounted = false; };
   }, []);
 
-  if (loading && options.length === 0) {
-      return (
-        <SearchableSelect 
-            label={label}
-            value=""
-            onChange={() => {}}
-            options={[{ value: '', label: 'Loading...' }]}
-            disabled={true}
-            placeholder="Loading..."
-            className={className}
-          showCheck={false}
-          showImages={false}
-        />
-      )
-  }
+  const displayOptions = (loading && options.length === 0)
+    ? [{ value: '', label: 'Loading...' }]
+    : options;
 
   return (
     <SearchableSelect
       label={label}
       value={value}
       onChange={onChange}
-      options={options}
-      placeholder={placeholder}
+      options={displayOptions}
+      placeholder={loading ? "Loading..." : placeholder}
       disabled={disabled || loading}
       className={className}
       showCheck={false}

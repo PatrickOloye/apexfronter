@@ -115,13 +115,7 @@ export default function SearchableSelect({
                 />
               </Combobox.Button>
             </div>
-            <Transition
-              as={Fragment}
-              leave="transition ease-in duration-100"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
-              afterLeave={() => setQuery('')}
-            >
+            {open && (
               <Combobox.Options 
                 className={`absolute z-50 w-full min-w-0 overflow-auto bg-slate-900 border border-slate-800 py-1 text-xs shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm scroller max-h-60 ${
                     dropUp 
@@ -180,7 +174,7 @@ export default function SearchableSelect({
                   ))
                 )}
               </Combobox.Options>
-            </Transition>
+            )}
           </div>
         )}
       </Combobox>
