@@ -33,11 +33,37 @@ export const api = axios.create({
   },
 });
 
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('apex_token');
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
 const refreshSession = async (): Promise<boolean> => {
   if (!refreshPromise) {
+    let refreshToken: string | null = null;
+    if (typeof window !== 'undefined') {
+      refreshToken = localStorage.getItem('refresh_token');
+    }
+    
     refreshPromise = axios
-      .post(`${API_URL}/auth/refresh`, {}, { withCredentials: true })
-      .then(() => true)
+      .post(`${API_URL}/auth/refresh`, { refreshToken }, { withCredentials: true })
+      .then((res) => {
+        if (typeof window !== 'undefined') {
+          const data = res.data?.data;
+          if (data?.accessToken) {
+            localStorage.setItem('apex_token', data.accessToken);
+          }
+          if (data?.refreshToken) {
+            localStorage.setItem('refresh_token', data.refreshToken);
+          }
+        }
+        return true;
+      })
       .catch(() => false)
       .finally(() => {
         refreshPromise = null;

@@ -103,7 +103,13 @@ export const useAuthStore = create<AuthStore>()(
     login: async (email, password) => {
       set({ isLoading: true, error: null });
       try {
-        await AuthService.login(email, password);
+        const result = await AuthService.login(email, password);
+        if (result && result.accessToken) {
+          localStorage.setItem('apex_token', result.accessToken);
+        }
+        if (result && result.refreshToken) {
+          localStorage.setItem('refresh_token', result.refreshToken);
+        }
         const currentUser = await AuthService.getCurrentUser();
         set({
           ...toAuthState(currentUser),
@@ -129,6 +135,8 @@ export const useAuthStore = create<AuthStore>()(
       try {
         await AuthService.logout();
       } finally {
+        localStorage.removeItem('apex_token');
+        localStorage.removeItem('refresh_token');
         set({
           ...toAuthState(null),
           error: null,
@@ -152,6 +160,8 @@ export const useAuthStore = create<AuthStore>()(
         return currentUser;
       } catch (err: any) {
         if (err?.status === 401 || err?.status === 403 || err?.status === 404) {
+          localStorage.removeItem('apex_token');
+          localStorage.removeItem('refresh_token');
           set({
             ...toAuthState(null),
             error: null,
@@ -170,6 +180,8 @@ export const useAuthStore = create<AuthStore>()(
     },
 
     clearSession: (message = null) => {
+      localStorage.removeItem('apex_token');
+      localStorage.removeItem('refresh_token');
       set({
         ...toAuthState(null),
         error: message,
