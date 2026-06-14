@@ -35,9 +35,6 @@ export default function CountrySelect({
       } finally {
         if (mounted) setLoading(false);
       }
-      } finally {
-        if (mounted) setLoading(false);
-      }
     };
 
     fetchCountries();
