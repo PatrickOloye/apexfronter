@@ -151,7 +151,7 @@ export default function SignUp() {
         password: formData.password,
       });
 
-      setSuccessMessage('Account created successfully. Verify your email before signing in.');
+      setSuccessMessage('Account created successfully! Redirecting to sign in...');
 
       router.push('/signin');
     } catch (error) {
